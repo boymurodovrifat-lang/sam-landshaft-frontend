@@ -15,14 +15,14 @@ export const useAuthStore = create<AuthState>()(
       admin: null,
       token: null,
       setAuth: (admin, token) => {
-        localStorage.setItem('samgeo_token', token);
+        localStorage.setItem('sam_landshaft_token', token);
         set({ admin, token });
       },
       logout: () => {
-        localStorage.removeItem('samgeo_token');
+        localStorage.removeItem('sam_landshaft_token');
         set({ admin: null, token: null });
       },
     }),
-    { name: 'samgeo-auth' }
+    { name: 'sam-landshaft-auth' }
   )
 );

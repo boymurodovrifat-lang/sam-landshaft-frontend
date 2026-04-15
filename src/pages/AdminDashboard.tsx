@@ -5,7 +5,7 @@ function DashboardHome() {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Dashboard</h2>
-      <p className="text-gray-600">SamGeo admin panelga xush kelibsiz.</p>
+      <p className="text-gray-600">Sam-Landshaft admin panelga xush kelibsiz.</p>
     </div>
   );
 }
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white flex flex-col">
         <div className="p-6 border-b border-gray-700">
-          <h1 className="text-xl font-bold">SamGeo Admin</h1>
+          <h1 className="text-xl font-bold">Sam-Landshaft Admin</h1>
           {admin && <p className="text-sm text-gray-400 mt-1">{admin.email}</p>}
         </div>
         <nav className="flex-1 p-4 space-y-1">

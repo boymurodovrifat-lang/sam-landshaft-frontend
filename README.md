@@ -1,6 +1,6 @@
-# SamGeo Frontend
+# Sam-Landshaft Frontend
 
-React + Vite + TypeScript + Tailwind + Leaflet frontend for SamGeo.uz.
+React + Vite + TypeScript + Tailwind + Leaflet frontend for Sam-Landshaft geoportali.
 
 ## Features
 

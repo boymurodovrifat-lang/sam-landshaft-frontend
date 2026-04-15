@@ -1,4 +1,4 @@
-# SamGeo Frontend — Production Dockerfile
+# Sam-Landshaft Frontend — Production Dockerfile
 # Builds the Vite app and serves it with Nginx
 
 FROM node:22-alpine AS builder

@@ -1,4 +1,4 @@
-// SamGeo — Common Types
+// Sam-Landshaft — Common Types
 
 export interface Category {
   id: number;

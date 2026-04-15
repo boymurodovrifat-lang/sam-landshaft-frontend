@@ -44,7 +44,7 @@ export default function MapPage() {
       <header className="bg-primary-900 text-white px-6 py-4 shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">SamGeo.uz</h1>
+            <h1 className="text-2xl font-bold">Sam-Landshaft</h1>
             <p className="text-sm text-primary-100">Samarqand viloyati landshaft geoportali</p>
           </div>
           <a

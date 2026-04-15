@@ -11,7 +11,7 @@ export const apiClient = axios.create({
 
 // Request interceptor — attach JWT token
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('samgeo_token');
+  const token = localStorage.getItem('sam_landshaft_token');
   if (token && config.headers) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -23,7 +23,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('samgeo_token');
+      localStorage.removeItem('sam_landshaft_token');
       if (!window.location.pathname.startsWith('/admin/login')) {
         window.location.href = '/admin/login';
       }
