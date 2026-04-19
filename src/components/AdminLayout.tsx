@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Files, Upload, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Files, Upload, LogOut, Map } from 'lucide-react';
 import { useAuthStore } from '../store/auth';
 
 export default function AdminLayout() {
@@ -50,7 +50,14 @@ export default function AdminLayout() {
           </NavLink>
         </nav>
 
-        <div className="p-3 border-t border-gray-800">
+        <div className="p-3 border-t border-gray-800 space-y-1">
+          <a
+            href="/"
+            target="_blank"
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg"
+          >
+            <Map size={16} /> Xaritani ko'rish
+          </a>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-red-600 hover:text-white rounded-lg"
