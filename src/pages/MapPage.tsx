@@ -43,6 +43,8 @@ export default function MapPage() {
   const [playing, setPlaying] = useState(false);
   const [recording, setRecording] = useState(false);
   const [recordProgress, setRecordProgress] = useState<{ done: number; total: number } | null>(null);
+  const [cogLoading, setCogLoading] = useState(false);
+  const [cogError, setCogError] = useState<string | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -344,9 +346,26 @@ export default function MapPage() {
                 opacity={opacity}
                 minValue={currentCategory.minValue ?? null}
                 maxValue={currentCategory.maxValue ?? null}
+                onLoading={setCogLoading}
+                onError={(msg) => setCogError(msg || null)}
               />
             )}
           </MapContainer>
+
+          {/* COG loading indicator */}
+          {cogLoading && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-white shadow-lg rounded-lg px-4 py-2 text-sm text-gray-600 flex items-center gap-2">
+              <div className="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+              Xarita yuklanmoqda...
+            </div>
+          )}
+
+          {/* COG error */}
+          {cogError && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-700">
+              {cogError}
+            </div>
+          )}
         </div>
       </div>
     </div>

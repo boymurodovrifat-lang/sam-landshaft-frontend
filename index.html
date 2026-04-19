@@ -1,13 +1,39 @@
 <!doctype html>
-<html lang="en">
+<html lang="uz">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>samgeo-frontend</title>
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#1e3a8a" />
+
+    <title>Sam-Landshaft — Samarqand viloyati landshaft geoportali</title>
+    <meta name="description" content="Samarqand viloyati tuproq sho'rlanishi, namligi va boshqa landshaft kriteriyalari bo'yicha interaktiv xaritalar platformasi. GeoTIFF yuklab olish, animatsiya va tahlil." />
+
+    <meta property="og:title" content="Sam-Landshaft — Samarqand viloyati landshaft geoportali" />
+    <meta property="og:description" content="Tuproq va landshaft xaritalarini interaktiv ko'rish, yuklab olish va tahlil qilish platformasi." />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="uz_UZ" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    <noscript>
+      <style>
+        #root { display: none; }
+        .noscript-msg { font-family: sans-serif; text-align: center; padding: 60px 20px; color: #334155; }
+      </style>
+      <div class="noscript-msg">
+        <h1>Sam-Landshaft</h1>
+        <p>Bu platforma ishlashi uchun JavaScript yoqilgan bo'lishi kerak.</p>
+      </div>
+    </noscript>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#64748b">
+        Yuklanmoqda...
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 import L from 'leaflet';
 import parseGeoraster from 'georaster';
@@ -11,13 +11,15 @@ import {
 } from '../lib/colorScheme';
 
 interface CogLayerProps {
-  url: string;              // COG fayl URL (backend /api/files/:id/cog)
+  url: string;
   colorSchemeJson?: string | null;
   opacity?: number;
-  minValue?: number | null; // Normalizatsiya uchun
+  minValue?: number | null;
   maxValue?: number | null;
   fitBounds?: boolean;
   onLoad?: (bounds: L.LatLngBounds) => void;
+  onLoading?: (loading: boolean) => void;
+  onError?: (message: string) => void;
 }
 
 export default function CogLayer({
@@ -28,22 +30,25 @@ export default function CogLayer({
   maxValue,
   fitBounds = true,
   onLoad,
+  onLoading,
+  onError,
 }: CogLayerProps) {
   const map = useMap();
   const layerRef = useRef<L.Layer | null>(null);
+  const [, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     let currentLayer: L.Layer | null = null;
+    onLoading?.(true);
+    onError?.('');
 
     (async () => {
       try {
-        // georaster HTTP Range Request bilan COG o'qiydi
         const georaster = await parseGeoraster(url);
         if (cancelled) return;
 
         const scheme: ColorScheme = parseColorScheme(colorSchemeJson) ?? DEFAULT_SCHEME;
-
         const min = minValue ?? (georaster.mins?.[0] ?? 0);
         const max = maxValue ?? (georaster.maxs?.[0] ?? 1);
         const range = max - min || 1;
@@ -51,12 +56,11 @@ export default function CogLayer({
         const layer = new GeoRasterLayer({
           georaster,
           opacity,
-          resolution: 256, // brauzerda render paytida kichraytiradi
+          resolution: 256,
           pixelValuesToColorFn: (values: number[]) => {
             const raw = values[0];
             if (raw == null || Number.isNaN(raw)) return null as any;
 
-            // Agar scheme absolute qiymatlar ishlatsa
             const useNormalized = scheme.every((s) => s.value >= 0 && s.value <= 1);
             const v = useNormalized ? (raw - min) / range : raw;
             return valueToColor(v, scheme) ?? 'rgba(0,0,0,0)';
@@ -66,6 +70,7 @@ export default function CogLayer({
         layer.addTo(map);
         currentLayer = layer;
         layerRef.current = layer;
+        setReady(true);
 
         const bounds = L.latLngBounds(
           [georaster.ymin, georaster.xmin],
@@ -74,7 +79,12 @@ export default function CogLayer({
         if (fitBounds) map.fitBounds(bounds, { padding: [20, 20] });
         onLoad?.(bounds);
       } catch (err) {
-        console.error('COG yuklashda xatolik:', err);
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : 'COG yuklashda xatolik';
+          onError?.(msg);
+        }
+      } finally {
+        if (!cancelled) onLoading?.(false);
       }
     })();
 
@@ -82,11 +92,12 @@ export default function CogLayer({
       cancelled = true;
       if (currentLayer) map.removeLayer(currentLayer);
       else if (layerRef.current) map.removeLayer(layerRef.current);
+      layerRef.current = null;
+      setReady(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
 
-  // Opacity o'zgarganda
   useEffect(() => {
     if (layerRef.current && 'setOpacity' in layerRef.current) {
       (layerRef.current as any).setOpacity(opacity);
