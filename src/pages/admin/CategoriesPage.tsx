@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 import { categoriesApi } from '../../api/categories';
 import type { Category, CategoryPayload } from '../../types';
+import ColorPalettePicker from '../../components/ColorPalettePicker';
 
 const DEFAULT_COLOR_SCHEME = JSON.stringify(
   [
@@ -77,7 +78,7 @@ export default function CategoriesPage() {
             <thead className="bg-gray-50 text-xs uppercase text-gray-500">
               <tr>
                 <th className="text-left px-4 py-3">Nomi</th>
-                <th className="text-left px-4 py-3">Slug</th>
+                <th className="text-left px-4 py-3">Rang</th>
                 <th className="text-left px-4 py-3">Birlik</th>
                 <th className="text-left px-4 py-3">Min - Max</th>
                 <th className="text-right px-4 py-3">Amallar</th>
@@ -92,7 +93,23 @@ export default function CategoriesPage() {
                       <div className="text-xs text-gray-500 mt-0.5">{c.description}</div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 font-mono">{c.slug}</td>
+                  <td className="px-4 py-3">
+                    {c.colorScheme ? (
+                      <div
+                        className="w-16 h-3 rounded"
+                        style={{
+                          background: (() => {
+                            try {
+                              const stops = JSON.parse(c.colorScheme) as { color: string }[];
+                              return `linear-gradient(to right, ${stops.map((s) => s.color).join(', ')})`;
+                            } catch { return '#ccc'; }
+                          })(),
+                        }}
+                      />
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{c.unit || '—'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     {c.minValue != null && c.maxValue != null
@@ -156,6 +173,8 @@ function CategoryDialog({ initial, onClose, onSaved }: DialogProps) {
     minValue: initial?.minValue ?? undefined,
     maxValue: initial?.maxValue ?? undefined,
   });
+  const [selectedPalette, setSelectedPalette] = useState<string | null>(null);
+  const [showJsonEditor, setShowJsonEditor] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -288,17 +307,53 @@ function CategoryDialog({ initial, onClose, onSaved }: DialogProps) {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Rang sxemasi (JSON)
+              Rang palitrasi
             </label>
-            <textarea
-              rows={8}
-              value={form.colorScheme || ''}
-              onChange={(e) => setForm({ ...form, colorScheme: e.target.value })}
-              className="w-full border rounded-lg px-3 py-2 font-mono text-xs"
+            <ColorPalettePicker
+              value={selectedPalette}
+              min={form.minValue ?? 0}
+              max={form.maxValue ?? 1}
+              onChange={(scheme, paletteName) => {
+                setSelectedPalette(paletteName);
+                setForm({ ...form, colorScheme: JSON.stringify(scheme, null, 2) });
+              }}
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Format: <code>[&#123; "value": 0, "color": "#2ecc71" &#125;, ...]</code>
-            </p>
+
+            {/* Preview */}
+            {form.colorScheme && (
+              <div className="mt-2">
+                <div
+                  className="h-4 rounded w-full"
+                  style={{
+                    background: (() => {
+                      try {
+                        const stops = JSON.parse(form.colorScheme) as { color: string }[];
+                        return `linear-gradient(to right, ${stops.map((s) => s.color).join(', ')})`;
+                      } catch {
+                        return '#ccc';
+                      }
+                    })(),
+                  }}
+                />
+              </div>
+            )}
+
+            {/* JSON editor — ilg'or foydalanuvchilar uchun */}
+            <button
+              type="button"
+              onClick={() => setShowJsonEditor(!showJsonEditor)}
+              className="text-xs text-primary-600 hover:underline mt-2"
+            >
+              {showJsonEditor ? 'JSON yashirish' : 'JSON ko\'rish / tahrirlash'}
+            </button>
+            {showJsonEditor && (
+              <textarea
+                rows={6}
+                value={form.colorScheme || ''}
+                onChange={(e) => setForm({ ...form, colorScheme: e.target.value })}
+                className="w-full border rounded-lg px-3 py-2 font-mono text-xs mt-1"
+              />
+            )}
           </div>
 
           {error && (
