@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
-import { Download, FileImage, Film, Play, Pause } from 'lucide-react';
+import { Download, FileImage, Film, Play, Pause, Menu, X } from 'lucide-react';
 import { categoriesApi } from '../api/categories';
 import { filesApi } from '../api/files';
 import type { Category, GeotiffFile } from '../types';
 import CogLayer from '../components/CogLayer';
 import Legend from '../components/Legend';
+import PixelValuePopup from '../components/PixelValuePopup';
 import { recordAnimation, downloadBlob } from '../lib/videoRecorder';
 
 // Samarqand viloyati markazi
@@ -45,6 +46,7 @@ export default function MapPage() {
   const [recordProgress, setRecordProgress] = useState<{ done: number; total: number } | null>(null);
   const [cogLoading, setCogLoading] = useState(false);
   const [cogError, setCogError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Initial load
   useEffect(() => {
@@ -159,16 +161,25 @@ export default function MapPage() {
   return (
     <div className="h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-primary-900 text-white px-6 py-3 shadow-md flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold leading-tight">Sam-Landshaft</h1>
-          <p className="text-xs text-primary-100">Samarqand viloyati landshaft xaritalari</p>
-        </div>
+      <header className="bg-primary-900 text-white px-4 md:px-6 py-3 shadow-md flex items-center justify-between">
         <div className="flex items-center gap-3">
+          {/* Mobile sidebar toggle */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden p-1 rounded hover:bg-primary-700"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <div>
+            <h1 className="text-lg md:text-xl font-bold leading-tight">Sam-Landshaft</h1>
+            <p className="text-xs text-primary-100 hidden sm:block">Samarqand viloyati landshaft xaritalari</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 md:gap-3">
           <select
             value={basemap}
             onChange={(e) => setBasemap(e.target.value as BasemapKey)}
-            className="bg-primary-700 text-white text-sm rounded px-2 py-1"
+            className="bg-primary-700 text-white text-xs md:text-sm rounded px-2 py-1"
           >
             {(Object.keys(BASEMAPS) as BasemapKey[]).map((k) => (
               <option key={k} value={k}>
@@ -178,16 +189,33 @@ export default function MapPage() {
           </select>
           <a
             href="/admin/login"
-            className="text-sm text-primary-100 hover:text-white border border-primary-400 rounded px-3 py-1"
+            className="text-xs md:text-sm text-primary-100 hover:text-white border border-primary-400 rounded px-2 md:px-3 py-1"
           >
             Admin
           </a>
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-80 bg-white border-r p-4 overflow-y-auto">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            className="md:hidden fixed inset-0 bg-black/40 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar — desktop: doim ko'rinadi, mobile: overlay sifatida */}
+        <aside
+          className={`
+            ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+            md:translate-x-0
+            fixed md:static inset-y-0 left-0 z-40
+            w-72 md:w-80 bg-white border-r p-4 overflow-y-auto
+            transition-transform duration-200 ease-in-out
+            top-[52px] md:top-0
+          `}
+        >
           {loading ? (
             <p className="text-gray-500">Yuklanmoqda...</p>
           ) : categories.length === 0 ? (
@@ -339,16 +367,23 @@ export default function MapPage() {
               attribution={BASEMAPS[basemap].attribution}
             />
             {cogUrl && currentCategory && (
-              <CogLayer
-                key={cogUrl}
-                url={cogUrl}
-                colorSchemeJson={currentCategory.colorScheme}
-                opacity={opacity}
-                minValue={currentCategory.minValue ?? null}
-                maxValue={currentCategory.maxValue ?? null}
-                onLoading={setCogLoading}
-                onError={(msg) => setCogError(msg || null)}
-              />
+              <>
+                <CogLayer
+                  key={cogUrl}
+                  url={cogUrl}
+                  colorSchemeJson={currentCategory.colorScheme}
+                  opacity={opacity}
+                  minValue={currentCategory.minValue ?? null}
+                  maxValue={currentCategory.maxValue ?? null}
+                  onLoading={setCogLoading}
+                  onError={(msg) => setCogError(msg || null)}
+                />
+                <PixelValuePopup
+                  cogUrl={cogUrl}
+                  categoryName={currentCategory.name}
+                  unit={currentCategory.unit ?? ''}
+                />
+              </>
             )}
           </MapContainer>
 
