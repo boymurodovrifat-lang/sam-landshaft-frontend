@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import { authApi } from '../api/auth';
@@ -10,38 +10,23 @@ interface Props {
 export default function ProtectedRoute({ children }: Props) {
   const token = useAuthStore((s) => s.token);
   const setAuth = useAuthStore((s) => s.setAuth);
-  const logout = useAuthStore((s) => s.logout);
-  const [checking, setChecking] = useState(true);
-  const [valid, setValid] = useState(false);
+  const checked = useRef(false);
 
+  // Fonda token haqiqiyligini tekshirish (faqat birinchi marta)
   useEffect(() => {
-    if (!token) {
-      setChecking(false);
-      return;
-    }
-    authApi
-      .me()
-      .then((admin) => {
-        setAuth(admin, token);
-        setValid(true);
-      })
-      .catch(() => {
-        logout();
-        setValid(false);
-      })
-      .finally(() => setChecking(false));
+    if (!token || checked.current) return;
+    checked.current = true;
+
+    authApi.me().then((a) => {
+      setAuth(a, token);
+    }).catch(() => {
+      // Faqat 401 bo'lsa logout — network xatolik bo'lsa yo'q
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (checking) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-400">
-        Tekshirilmoqda...
-      </div>
-    );
-  }
-
-  if (!token || !valid) {
+  // Token yo'q bo'lsa — login'ga yo'naltirish
+  if (!token) {
     return <Navigate to="/admin/login" replace />;
   }
 
