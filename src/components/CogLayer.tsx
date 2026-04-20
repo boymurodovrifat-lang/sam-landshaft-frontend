@@ -22,6 +22,22 @@ interface CogLayerProps {
   onError?: (message: string) => void;
 }
 
+/**
+ * Rang sxemasini 0-1 oraliqqa normalizatsiya qiladi.
+ * Bu har qanday diapazondagi sxemani (0-1, 0-100, 0-16) birxil ishlashini ta'minlaydi.
+ */
+function normalizeScheme(scheme: ColorScheme): ColorScheme {
+  if (scheme.length < 2) return scheme;
+  const vals = scheme.map((s) => s.value);
+  const sMin = Math.min(...vals);
+  const sMax = Math.max(...vals);
+  const sRange = sMax - sMin || 1;
+  return scheme.map((s) => ({
+    ...s,
+    value: (s.value - sMin) / sRange,
+  }));
+}
+
 export default function CogLayer({
   url,
   colorSchemeJson,
@@ -48,10 +64,15 @@ export default function CogLayer({
         const georaster = await parseGeoraster(url);
         if (cancelled) return;
 
-        const scheme: ColorScheme = parseColorScheme(colorSchemeJson) ?? DEFAULT_SCHEME;
-        const min = minValue ?? (georaster.mins?.[0] ?? 0);
-        const max = maxValue ?? (georaster.maxs?.[0] ?? 1);
-        const range = max - min || 1;
+        const rawScheme: ColorScheme = parseColorScheme(colorSchemeJson) ?? DEFAULT_SCHEME;
+        const normScheme = normalizeScheme(rawScheme);
+
+        // Min/Max aniqlash: category > georaster > default
+        const dataMin = minValue ?? georaster.mins?.[0] ?? 0;
+        const dataMax = maxValue ?? georaster.maxs?.[0] ?? 1;
+        const dataRange = dataMax - dataMin || 1;
+
+        const noData = georaster.noDataValue;
 
         const layer = new GeoRasterLayer({
           georaster,
@@ -59,11 +80,14 @@ export default function CogLayer({
           resolution: 256,
           pixelValuesToColorFn: (values: number[]) => {
             const raw = values[0];
+            // NoData, null, NaN — shaffof
             if (raw == null || Number.isNaN(raw)) return null as any;
+            if (noData != null && raw === noData) return null as any;
 
-            const useNormalized = scheme.every((s) => s.value >= 0 && s.value <= 1);
-            const v = useNormalized ? (raw - min) / range : raw;
-            return valueToColor(v, scheme) ?? 'rgba(0,0,0,0)';
+            // Pixel qiymatini 0-1 ga normalizatsiya
+            const normalized = Math.max(0, Math.min(1, (raw - dataMin) / dataRange));
+
+            return valueToColor(normalized, normScheme) ?? 'rgba(0,0,0,0)';
           },
         });
 
