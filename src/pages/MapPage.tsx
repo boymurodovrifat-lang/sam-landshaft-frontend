@@ -6,7 +6,8 @@ import { filesApi } from '../api/files';
 import type { Category, GeotiffFile } from '../types';
 import CogLayer from '../components/CogLayer';
 import Legend from '../components/Legend';
-import PixelValuePopup from '../components/PixelValuePopup';
+import PixelValuePopup, { type PickedPixel } from '../components/PixelValuePopup';
+import PixelInfoCard from '../components/PixelInfoCard';
 import { recordAnimation, downloadBlob } from '../lib/videoRecorder';
 
 // Samarqand viloyati markazi
@@ -36,6 +37,7 @@ const BASEMAPS: Record<BasemapKey, { url: string; attribution: string; name: str
 export default function MapPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [files, setFiles] = useState<GeotiffFile[]>([]);
+  const [selectedRootId, setSelectedRootId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [opacity, setOpacity] = useState(0.75);
@@ -47,6 +49,7 @@ export default function MapPage() {
   const [cogLoading, setCogLoading] = useState(false);
   const [cogError, setCogError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pickedPixel, setPickedPixel] = useState<PickedPixel | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -58,7 +61,19 @@ export default function MapPage() {
         ]);
         setCategories(cats);
         setFiles(allFiles);
-        if (cats.length > 0) setSelectedCategoryId(cats[0].id);
+
+        // Birinchi faylga ega subkategoriyani tanlab qo'yish
+        const fileCatIds = new Set(allFiles.map((f) => f.categoryId));
+        const firstSubWithFile = cats.find(
+          (c) => c.parentId != null && fileCatIds.has(c.id),
+        );
+        if (firstSubWithFile) {
+          setSelectedCategoryId(firstSubWithFile.id);
+          setSelectedRootId(firstSubWithFile.parentId ?? null);
+        } else {
+          const firstRoot = cats.find((c) => c.parentId == null);
+          if (firstRoot) setSelectedRootId(firstRoot.id);
+        }
       } catch (err) {
         console.error("Ma'lumot yuklashda xatolik:", err);
       } finally {
@@ -66,6 +81,35 @@ export default function MapPage() {
       }
     })();
   }, []);
+
+  const rootCategories = useMemo(
+    () => categories
+      .filter((c) => c.parentId == null)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name)),
+    [categories],
+  );
+
+  const subcategoriesForRoot = useMemo(
+    () => categories
+      .filter((c) => c.parentId === selectedRootId)
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name)),
+    [categories, selectedRootId],
+  );
+
+  // Root o'zgarganda — birinchi subkategoriyani tanlash (faylga ega bo'lsa ustun)
+  useEffect(() => {
+    if (selectedRootId == null) return;
+    if (
+      selectedCategoryId != null &&
+      subcategoriesForRoot.some((c) => c.id === selectedCategoryId)
+    ) {
+      return;
+    }
+    const fileCatIds = new Set(files.map((f) => f.categoryId));
+    const withFile = subcategoriesForRoot.find((c) => fileCatIds.has(c.id));
+    setSelectedCategoryId(withFile?.id ?? subcategoriesForRoot[0]?.id ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRootId, subcategoriesForRoot.length]);
 
   // Filter files by selected category
   const filesForCategory = useMemo(
@@ -112,6 +156,11 @@ export default function MapPage() {
   const cogUrl = currentFile
     ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/files/${currentFile.id}/cog`
     : null;
+
+  // File/category changes → close card
+  useEffect(() => {
+    setPickedPixel(null);
+  }, [cogUrl]);
 
   const handleDownloadTiff = () => {
     if (!currentFile) return;
@@ -226,26 +275,56 @@ export default function MapPage() {
             </div>
           ) : (
             <div className="space-y-5">
-              {/* Category */}
+              {/* Kategoriya (root) */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">
                   Kategoriya
                 </label>
                 <select
                   className="w-full border rounded-lg px-3 py-2 text-sm"
-                  value={selectedCategoryId ?? ''}
-                  onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
+                  value={selectedRootId ?? ''}
+                  onChange={(e) => {
+                    setSelectedRootId(Number(e.target.value));
+                    setSelectedCategoryId(null);
+                  }}
                 >
-                  {categories.map((c) => (
+                  {rootCategories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
                     </option>
                   ))}
                 </select>
-                {currentCategory?.description && (
-                  <p className="text-xs text-gray-500 mt-2">{currentCategory.description}</p>
-                )}
               </div>
+
+              {/* Subkategoriya */}
+              {subcategoriesForRoot.length > 0 ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">
+                    Subkategoriya
+                  </label>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={selectedCategoryId ?? ''}
+                    onChange={(e) => setSelectedCategoryId(Number(e.target.value))}
+                  >
+                    {subcategoriesForRoot.map((c) => {
+                      const hasFile = files.some((f) => f.categoryId === c.id);
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.name}{!hasFile ? ' — (fayl yo\'q)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  {currentCategory?.description && (
+                    <p className="text-xs text-gray-500 mt-2">{currentCategory.description}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-400 italic">
+                  Bu kategoriyada subkategoriya yo'q
+                </div>
+              )}
 
               {/* Years */}
               {availableYears.length > 0 ? (
@@ -380,12 +459,22 @@ export default function MapPage() {
                 />
                 <PixelValuePopup
                   cogUrl={cogUrl}
-                  categoryName={currentCategory.name}
-                  unit={currentCategory.unit ?? ''}
+                  onPick={setPickedPixel}
                 />
               </>
             )}
           </MapContainer>
+
+          {pickedPixel && currentCategory && (
+            <PixelInfoCard
+              info={pickedPixel}
+              categoryName={currentCategory.name}
+              categoryDescription={currentCategory.description}
+              unit={currentCategory.unit}
+              year={selectedYear}
+              onClose={() => setPickedPixel(null)}
+            />
+          )}
 
           {/* COG loading indicator */}
           {cogLoading && (

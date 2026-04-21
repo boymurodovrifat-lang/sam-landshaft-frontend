@@ -7,6 +7,7 @@ import type { Category } from '../../types';
 
 export default function UploadPage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
   const [categoryId, setCategoryId] = useState<number | ''>('');
   const [year, setYear] = useState<number>(new Date().getFullYear());
   const [file, setFile] = useState<File | null>(null);
@@ -19,8 +20,10 @@ export default function UploadPage() {
   useEffect(() => {
     (async () => {
       const cats = await categoriesApi.getAll();
-      setCategories(cats);
-      if (cats.length > 0) setCategoryId(cats[0].id);
+      setAllCategories(cats);
+      const subs = cats.filter((c) => c.parentId != null);
+      setCategories(subs);
+      if (subs.length > 0) setCategoryId(subs[0].id);
     })();
   }, []);
 
@@ -67,7 +70,7 @@ export default function UploadPage() {
 
       {categories.length === 0 ? (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
-          Avval kamida bitta kategoriya yarating.
+          Avval kamida bitta subkategoriya yarating. Fayl faqat subkategoriyaga yuklanadi.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="bg-white rounded-xl border p-6 space-y-5">
@@ -80,11 +83,15 @@ export default function UploadPage() {
                 onChange={(e) => setCategoryId(Number(e.target.value))}
                 className="w-full border rounded-lg px-3 py-2"
               >
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                {categories.map((c) => {
+                  const parent = allCategories.find((p) => p.id === c.parentId);
+                  return (
+                    <option key={c.id} value={c.id}>
+                      {parent ? `${parent.name} · ` : ''}
+                      {c.name}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <div>

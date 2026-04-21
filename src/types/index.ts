@@ -2,13 +2,17 @@
 
 export interface Category {
   id: number;
+  parentId?: number | null;
   name: string;
   slug: string;
   description?: string;
-  unit?: string;           // e.g. "dS/m", "%"
-  colorScheme?: string;    // JSON with color stops
+  unit?: string;
+  colorScheme?: string;
   minValue?: number;
   maxValue?: number;
+  sortOrder?: number;
+  children?: Category[];
+  parent?: Category | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,6 +54,7 @@ export interface LoginPayload {
 }
 
 export interface CategoryPayload {
+  parentId?: number | null;
   name: string;
   slug: string;
   description?: string;
@@ -57,6 +62,7 @@ export interface CategoryPayload {
   colorScheme?: string;
   minValue?: number;
   maxValue?: number;
+  sortOrder?: number;
 }
 
 export interface PaginatedResponse<T> {
