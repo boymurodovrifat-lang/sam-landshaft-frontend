@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import Loader from './components/Loader';
 
 // Lazy loading — admin sahifalar faqat kerak bo'lganda yuklanadi
 const MapPage = lazy(() => import('./pages/MapPage'));
@@ -10,18 +11,10 @@ const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const isAdminSubdomain =
   typeof window !== 'undefined' && window.location.hostname.startsWith('admin.');
 
-function Loading() {
-  return (
-    <div className="flex items-center justify-center h-screen text-gray-400">
-      Yuklanmoqda...
-    </div>
-  );
-}
-
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<Loader />}>
         <Routes>
           <Route
             path="/"

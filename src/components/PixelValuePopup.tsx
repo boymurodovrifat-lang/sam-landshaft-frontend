@@ -104,7 +104,6 @@ export default function PixelValuePopup({ cogUrl, pickedLatLng, onPick }: Props)
       }
 
       const reqId = ++reqIdRef.current;
-      const startedAt = performance.now();
 
       // Optimistic report — pin appears immediately, value still loading
       onPick({ lat, lng, value: null, loading: true });
@@ -153,16 +152,6 @@ export default function PixelValuePopup({ cogUrl, pickedLatLng, onPick }: Props)
       }
 
       if (reqId !== reqIdRef.current) return;
-
-      // Minimum loader display time so the skeleton+ping doesn't just
-      // flash for 50ms on fast-path hits.
-      const elapsed = performance.now() - startedAt;
-      const MIN_LOADER_MS = 450;
-      if (elapsed < MIN_LOADER_MS) {
-        await new Promise<void>((r) => setTimeout(r, MIN_LOADER_MS - elapsed));
-        if (reqId !== reqIdRef.current) return;
-      }
-
       onPick({ lat, lng, value, loading: false });
     },
   });
