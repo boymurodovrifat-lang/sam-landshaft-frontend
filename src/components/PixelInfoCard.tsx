@@ -35,7 +35,20 @@ export default function PixelInfoCard({
   const hasValue = info.value != null && !Number.isNaN(info.value);
 
   return (
-    <div className="absolute top-4 right-4 z-[1000] w-72 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
+    <div
+      className="
+        fixed inset-x-0 bottom-0 z-[1000] w-full
+        rounded-t-2xl rounded-b-none border-t
+        md:absolute md:inset-auto md:top-4 md:right-4 md:bottom-auto md:left-auto
+        md:w-72 md:rounded-xl md:border
+        bg-white shadow-xl border-gray-200 overflow-hidden
+        animate-[slideUp_200ms_ease-out] md:animate-none
+      "
+    >
+      {/* Mobile drag handle */}
+      <div className="flex justify-center pt-2 md:hidden" aria-hidden="true">
+        <span className="w-10 h-1 rounded-full bg-gray-300" />
+      </div>
       <div className="flex items-start justify-between px-4 py-3 border-b bg-gradient-to-r from-primary-50 to-white">
         <div className="min-w-0">
           <div className="text-[11px] uppercase tracking-wide text-primary-700 font-semibold">
