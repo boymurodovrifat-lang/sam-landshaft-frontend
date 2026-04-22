@@ -4,6 +4,7 @@ export interface PixelInfo {
   lat: number;
   lng: number;
   value: number | null;
+  loading?: boolean;
 }
 
 interface Props {
@@ -61,6 +62,11 @@ export default function PixelInfoCard({
           </div>
           {hasValue ? (
             <div className="text-2xl font-bold text-gray-900">{formatValue()}</div>
+          ) : info.loading ? (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span className="w-3.5 h-3.5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+              Yuklanmoqda...
+            </div>
           ) : (
             <div className="text-sm text-gray-500 italic">Ma'lumot yo'q</div>
           )}

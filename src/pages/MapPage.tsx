@@ -459,6 +459,11 @@ export default function MapPage() {
                 />
                 <PixelValuePopup
                   cogUrl={cogUrl}
+                  pickedLatLng={
+                    pickedPixel
+                      ? { lat: pickedPixel.lat, lng: pickedPixel.lng }
+                      : null
+                  }
                   onPick={setPickedPixel}
                 />
               </>
