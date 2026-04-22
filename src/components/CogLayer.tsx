@@ -95,6 +95,18 @@ export default function CogLayer({
           },
         });
 
+        // GeoRasterLayer extends GridLayer, which fires 'load' once all
+        // visible tiles have finished rendering. We hold cogLoading=true
+        // until then so consumers (animation loop, toast) see the real
+        // "tiles painted" signal, not just "layer added".
+        let loadingClearedByEvent = false;
+        const handleLoad = () => {
+          if (cancelled) return;
+          loadingClearedByEvent = true;
+          onLoading?.(false);
+        };
+        layer.once('load', handleLoad);
+
         layer.addTo(map);
         currentLayer = layer;
         layerRef.current = layer;
@@ -106,13 +118,18 @@ export default function CogLayer({
         );
         if (fitBounds) map.fitBounds(bounds, { padding: [20, 20] });
         onLoad?.(bounds);
+
+        // Safety net: if 'load' doesn't fire within 15s (bounded COG with
+        // no visible tiles, network hiccup), clear loading anyway.
+        setTimeout(() => {
+          if (!cancelled && !loadingClearedByEvent) onLoading?.(false);
+        }, 15000);
       } catch (err) {
         if (!cancelled) {
           const msg = err instanceof Error ? err.message : 'COG yuklashda xatolik';
           onError?.(msg);
+          onLoading?.(false);
         }
-      } finally {
-        if (!cancelled) onLoading?.(false);
       }
     })();
 
