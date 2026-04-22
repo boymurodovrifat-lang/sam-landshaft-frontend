@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Trash2, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, Trash2, Upload, ChevronLeft, ChevronRight, Pencil, X } from 'lucide-react';
 import { categoriesApi } from '../../api/categories';
 import { filesApi } from '../../api/files';
 import type { Category, GeotiffFile } from '../../types';
@@ -15,6 +15,7 @@ export default function FilesPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const [editing, setEditing] = useState<GeotiffFile | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -77,6 +78,18 @@ export default function FilesPage() {
     if (bn < 1024 ** 2) return `${(bn / 1024).toFixed(1)} KB`;
     if (bn < 1024 ** 3) return `${(bn / 1024 ** 2).toFixed(1)} MB`;
     return `${(bn / 1024 ** 3).toFixed(2)} GB`;
+  };
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('uz-UZ', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   return (
@@ -159,6 +172,7 @@ export default function FilesPage() {
                   <th className="text-left px-4 py-3">Yil</th>
                   <th className="text-left px-4 py-3">Hajm</th>
                   <th className="text-left px-4 py-3">O'lcham</th>
+                  <th className="text-left px-4 py-3">Yuklangan</th>
                   <th className="text-right px-4 py-3">Amallar</th>
                 </tr>
               </thead>
@@ -183,10 +197,20 @@ export default function FilesPage() {
                     <td className="px-4 py-3 text-xs text-gray-500">
                       {f.width && f.height ? `${f.width} × ${f.height}` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                      {formatDate(f.uploadedAt)}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => setEditing(f)}
+                        className="inline-flex p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded"
+                        title="Tahrirlash"
+                      >
+                        <Pencil size={14} />
+                      </button>
                       <a
                         href={filesApi.getDownloadUrl(f.id, 'tiff')}
-                        className="inline-flex p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded"
+                        className="inline-flex p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded ml-1"
                         title="Yuklab olish"
                       >
                         <Download size={14} />
@@ -216,6 +240,123 @@ export default function FilesPage() {
             )}
           </>
         )}
+      </div>
+
+      {editing && (
+        <EditFileDialog
+          file={editing}
+          categoryOptions={categoryOptions}
+          onClose={() => setEditing(null)}
+          onSaved={async () => {
+            setEditing(null);
+            await load();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface EditDialogProps {
+  file: GeotiffFile;
+  categoryOptions: { root: Category; subs: Category[] }[];
+  onClose: () => void;
+  onSaved: () => void;
+}
+
+function EditFileDialog({ file, categoryOptions, onClose, onSaved }: EditDialogProps) {
+  const [categoryId, setCategoryId] = useState(file.categoryId);
+  const [year, setYear] = useState(file.year);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      await filesApi.update(file.id, { categoryId, year });
+      onSaved();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Xatolik');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b">
+          <h2 className="text-lg font-bold">Faylni tahrirlash</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={20} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <div className="text-xs text-gray-500 bg-gray-50 rounded px-3 py-2">
+            <div className="font-mono truncate">{file.filename}</div>
+            <div>ID: {file.id}</div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Subkategoriya *</label>
+            <select
+              required
+              value={categoryId}
+              onChange={(e) => setCategoryId(Number(e.target.value))}
+              className="w-full border rounded-lg px-3 py-2 text-sm"
+            >
+              {categoryOptions.map(({ root, subs }) => (
+                <optgroup key={root.id} label={root.name}>
+                  {subs.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Yil *</label>
+            <input
+              type="number"
+              required
+              min={1900}
+              max={2100}
+              value={year}
+              onChange={(e) => setYear(Number(e.target.value))}
+              className="w-full border rounded-lg px-3 py-2"
+            />
+          </div>
+
+          {error && (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg text-sm">
+              Bekor qilish
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-primary-600 hover:bg-primary-700 text-white rounded-lg px-4 py-2 text-sm disabled:opacity-60"
+            >
+              {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

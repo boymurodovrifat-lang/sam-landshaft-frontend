@@ -34,6 +34,14 @@ export const filesApi = {
     return data;
   },
 
+  update: async (
+    id: number,
+    payload: { categoryId?: number; year?: number },
+  ): Promise<GeotiffFile> => {
+    const { data } = await apiClient.patch<GeotiffFile>(`/files/${id}`, payload);
+    return data;
+  },
+
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/files/${id}`);
   },
