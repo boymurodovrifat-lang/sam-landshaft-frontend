@@ -5,20 +5,33 @@ export interface RecordOptions {
   mapEl: HTMLElement;
   years: number[];
   onYearChange: (year: number) => Promise<void> | void;
-  holdMs?: number;        // Har bir kadr ushlash vaqti
+  /**
+   * Optional: called after each year change. Should resolve once the
+   * new raster has finished loading (no more loading spinners).
+   * If omitted, falls back to a fixed wait.
+   */
+  waitForFrame?: () => Promise<void>;
+  holdMs?: number;        // Har bir kadrni ushlab turish vaqti
   fps?: number;           // Kadr tezligi
   onProgress?: (done: number, total: number) => void;
 }
 
 function pickMimeType(): { mimeType: string; ext: string } {
-  const candidates = [
-    'video/webm;codecs=vp9',
-    'video/webm;codecs=vp8',
-    'video/webm',
+  // Prefer MP4 (wider player compatibility — iOS Safari, macOS Preview,
+  // Telegram, WhatsApp inline playback). Fall back to WebM if the browser
+  // cannot encode MP4 via MediaRecorder (e.g. Firefox).
+  const candidates: { m: string; ext: string }[] = [
+    { m: 'video/mp4;codecs=avc1.42E01F', ext: 'mp4' },  // H.264 baseline
+    { m: 'video/mp4;codecs=avc1.4D401F', ext: 'mp4' },  // H.264 main
+    { m: 'video/mp4;codecs=h264', ext: 'mp4' },
+    { m: 'video/mp4', ext: 'mp4' },
+    { m: 'video/webm;codecs=vp9', ext: 'webm' },
+    { m: 'video/webm;codecs=vp8', ext: 'webm' },
+    { m: 'video/webm', ext: 'webm' },
   ];
-  for (const m of candidates) {
-    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(m)) {
-      return { mimeType: m, ext: 'webm' };
+  for (const c of candidates) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(c.m)) {
+      return { mimeType: c.m, ext: c.ext };
     }
   }
   return { mimeType: 'video/webm', ext: 'webm' };
@@ -49,22 +62,25 @@ async function captureFrame(
 }
 
 /**
- * Har bir yil uchun xarita kadrini olib, ularni WebM videoga birlashtiradi.
+ * Har bir yil uchun xarita kadrini olib, ularni videoga birlashtiradi.
  * Natijada Blob qaytadi — brauzerda darhol yuklab olish mumkin.
+ * Format: MP4 (H.264) qo'llab-quvvatlansa, aks holda WebM.
  */
 export async function recordAnimation({
   mapEl,
   years,
   onYearChange,
+  waitForFrame,
   holdMs = 1500,
   fps = 30,
   onProgress,
 }: RecordOptions): Promise<{ blob: Blob; ext: string }> {
   if (years.length === 0) throw new Error('Yillar ro\'yxati bo\'sh');
 
-  // Birinchi yil bilan dimensiya aniqlash
+  // Birinchi yil — dimensiya va birinchi kadr
   await onYearChange(years[0]);
-  await waitMs(holdMs);
+  if (waitForFrame) await waitForFrame();
+  else await waitMs(holdMs);
 
   const canvas = document.createElement('canvas');
   canvas.width = mapEl.clientWidth;
@@ -99,7 +115,8 @@ export async function recordAnimation({
   for (let i = 1; i < years.length; i++) {
     onProgress?.(i, years.length);
     await onYearChange(years[i]);
-    await waitMs(holdMs * 0.5); // Render kutish
+    if (waitForFrame) await waitForFrame();
+    else await waitMs(holdMs * 0.5);
     await captureFrame(mapEl, canvas, ctx);
     for (let j = 0; j < framesPerHold; j++) {
       await new Promise<void>((r) => requestAnimationFrame(() => r()));
