@@ -16,6 +16,15 @@ export default {
           900: '#1e3a8a',
         },
       },
+      keyframes: {
+        shimmer: {
+          '0%, 100%': { backgroundPosition: '200% 0' },
+          '50%': { backgroundPosition: '-200% 0' },
+        },
+      },
+      animation: {
+        shimmer: 'shimmer 1.4s ease-in-out infinite',
+      },
     },
   },
   plugins: [],

@@ -63,9 +63,15 @@ export default function PixelInfoCard({
           {hasValue ? (
             <div className="text-2xl font-bold text-gray-900">{formatValue()}</div>
           ) : info.loading ? (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span className="w-3.5 h-3.5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-              Yuklanmoqda...
+            <div className="flex items-center gap-3 py-1" aria-label="Yuklanmoqda">
+              <span className="relative flex w-5 h-5 shrink-0" aria-hidden="true">
+                <span className="absolute inset-0 rounded-full bg-primary-500 opacity-40 animate-ping" />
+                <span className="absolute inset-[3px] rounded-full bg-primary-600 shadow-[0_0_0_2px_#fff]" />
+              </span>
+              <div className="flex-1 space-y-1.5">
+                <div className="h-5 w-24 rounded bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%] animate-[shimmer_1.4s_ease-in-out_infinite]" />
+                <div className="h-2 w-36 rounded bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 bg-[length:200%_100%] animate-[shimmer_1.4s_ease-in-out_infinite_0.2s]" />
+              </div>
             </div>
           ) : (
             <div className="text-sm text-gray-500 italic">Ma'lumot yo'q</div>
