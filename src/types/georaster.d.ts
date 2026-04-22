@@ -1,4 +1,14 @@
 declare module 'georaster' {
+  export interface GetValuesOptions {
+    left: number;
+    right: number;
+    top: number;
+    bottom: number;
+    width?: number;
+    height?: number;
+    resampleMethod?: string;
+  }
+
   export interface Georaster {
     values: number[][][];
     width: number;
@@ -15,6 +25,7 @@ declare module 'georaster' {
     mins?: number[];
     maxs?: number[];
     ranges?: number[];
+    getValues?: (options: GetValuesOptions) => Promise<(number | null)[][][]>;
   }
 
   export default function parseGeoraster(
@@ -32,11 +43,13 @@ declare module 'georaster-layer-for-leaflet' {
     opacity?: number;
     resolution?: number;
     debugLevel?: number;
+    caching?: boolean;
     pixelValuesToColorFn?: (values: number[]) => string | null;
   }
 
   export default class GeoRasterLayer extends Layer {
     constructor(options: GeoRasterLayerOptions);
     setOpacity(opacity: number): void;
+    clearCache(): void;
   }
 }

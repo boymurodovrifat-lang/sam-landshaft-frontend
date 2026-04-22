@@ -78,6 +78,10 @@ export default function CogLayer({
           georaster,
           opacity,
           resolution: 256,
+          // Library's tile cache is a prototype-level object shared across
+          // all layer instances — switching category reuses previous layer's
+          // rendered tiles, showing wrong palette. Disable it.
+          caching: false,
           pixelValuesToColorFn: (values: number[]) => {
             const raw = values[0];
             // NoData, null, NaN — shaffof
