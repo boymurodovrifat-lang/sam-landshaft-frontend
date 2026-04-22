@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import { Download, FileImage, Film, Play, Pause, Menu, X } from 'lucide-react';
 import { categoriesApi } from '../api/categories';
@@ -47,6 +47,7 @@ export default function MapPage() {
   const [recording, setRecording] = useState(false);
   const [recordProgress, setRecordProgress] = useState<{ done: number; total: number } | null>(null);
   const [cogLoading, setCogLoading] = useState(false);
+  const cogLoadingRef = useRef(false);
   const [cogError, setCogError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pickedPixel, setPickedPixel] = useState<PickedPixel | null>(null);
@@ -139,19 +140,21 @@ export default function MapPage() {
   const currentCategory = categories.find((c) => c.id === selectedCategoryId) || null;
   const currentFile = filesForCategory.find((f) => f.year === selectedYear) || null;
 
-  // Animation — yillar orasida o'tish
+  // Animation — advance only when the current frame has actually loaded.
+  // Previously a naïve setInterval raced through years while tiles were
+  // still fetching, so some frames were never shown.
   useEffect(() => {
     if (!playing || availableYears.length < 2) return;
-    const t = setInterval(() => {
+    if (cogLoading) return; // wait for current frame's tiles
+    const t = setTimeout(() => {
       setSelectedYear((y) => {
         if (y == null) return availableYears[0];
         const idx = availableYears.indexOf(y);
-        const next = availableYears[(idx + 1) % availableYears.length];
-        return next;
+        return availableYears[(idx + 1) % availableYears.length];
       });
-    }, 1500);
-    return () => clearInterval(t);
-  }, [playing, availableYears]);
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [playing, availableYears, cogLoading, selectedYear]);
 
   const cogUrl = currentFile
     ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/files/${currentFile.id}/cog`
@@ -194,6 +197,18 @@ export default function MapPage() {
         fps: 24,
         onYearChange: async (year) => {
           setSelectedYear(year);
+        },
+        // Wait until tiles for the new year have actually rendered.
+        // Ref-based polling keeps this out of the render loop.
+        waitForFrame: async () => {
+          // Give React a tick to propagate the new year + kick off load
+          await new Promise<void>((r) => setTimeout(r, 150));
+          const deadline = Date.now() + 15_000;
+          while (cogLoadingRef.current && Date.now() < deadline) {
+            await new Promise<void>((r) => setTimeout(r, 100));
+          }
+          // Small settle delay for the final paint
+          await new Promise<void>((r) => setTimeout(r, 250));
         },
         onProgress: (done, total) => setRecordProgress({ done, total }),
       });
@@ -454,7 +469,10 @@ export default function MapPage() {
                   opacity={opacity}
                   minValue={currentCategory.minValue ?? null}
                   maxValue={currentCategory.maxValue ?? null}
-                  onLoading={setCogLoading}
+                  onLoading={(v) => {
+                    cogLoadingRef.current = v;
+                    setCogLoading(v);
+                  }}
                   onError={(msg) => setCogError(msg || null)}
                 />
                 <PixelValuePopup
