@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronRight, FolderOpen, Folder, FileText } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, ChevronDown, ChevronRight, FolderOpen, Folder, FileText, Sparkles } from 'lucide-react';
 import { categoriesApi } from '../../api/categories';
 import type { Category, CategoryPayload } from '../../types';
 import ColorPalettePicker from '../../components/ColorPalettePicker';
@@ -66,6 +66,21 @@ export default function CategoriesPage() {
     }
     return { roots, childrenByParent };
   }, [items]);
+
+  const handleApplyPreset = async (c: Category) => {
+    const ok = confirm(
+      `"${c.name}" uchun standart palitra qo'llansinmi?\n` +
+      `Birlik, Min/Max va rang sxemasi slug (${c.slug}) bo'yicha tiklanadi.`,
+    );
+    if (!ok) return;
+    try {
+      await categoriesApi.applyPreset(c.id);
+      await load();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message || 'Xatolik';
+      alert(`Preset qo'llanmadi: ${msg}`);
+    }
+  };
 
   const handleDelete = async (c: Category) => {
     const hasChildren = childrenByParent.get(c.id)?.length ?? 0;
@@ -139,6 +154,7 @@ export default function CategoriesPage() {
                     onEdit={(c) => setDialog({ kind: 'edit', category: c })}
                     onDelete={handleDelete}
                     onAddSub={() => setDialog({ kind: 'create', parentId: root.id })}
+                    onApplyPreset={handleApplyPreset}
                   />
                 );
               })}
@@ -170,9 +186,10 @@ interface RowProps {
   onEdit: (c: Category) => void;
   onDelete: (c: Category) => void;
   onAddSub: () => void;
+  onApplyPreset: (c: Category) => void;
 }
 
-function RootAndChildren({ root, kids, isOpen, onToggle, onEdit, onDelete, onAddSub }: RowProps) {
+function RootAndChildren({ root, kids, isOpen, onToggle, onEdit, onDelete, onAddSub, onApplyPreset }: RowProps) {
   return (
     <>
       <tr className="bg-gray-50/60 hover:bg-gray-50">
@@ -265,8 +282,15 @@ function RootAndChildren({ root, kids, isOpen, onToggle, onEdit, onDelete, onAdd
             </td>
             <td className="px-4 py-3 text-right whitespace-nowrap">
               <button
+                onClick={() => onApplyPreset(c)}
+                className="inline-flex p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded"
+                title="Slug bo'yicha standart palitrani qo'llash"
+              >
+                <Sparkles size={14} />
+              </button>
+              <button
                 onClick={() => onEdit(c)}
-                className="inline-flex p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded"
+                className="inline-flex p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded ml-1"
                 title="Tahrirlash"
               >
                 <Pencil size={14} />

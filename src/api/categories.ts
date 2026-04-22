@@ -30,4 +30,9 @@ export const categoriesApi = {
   delete: async (id: number): Promise<void> => {
     await apiClient.delete(`/categories/${id}`);
   },
+
+  applyPreset: async (id: number): Promise<Category> => {
+    const { data } = await apiClient.post<Category>(`/categories/${id}/apply-preset`);
+    return data;
+  },
 };
