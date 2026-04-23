@@ -167,6 +167,30 @@ export default function MapPage() {
     setPickedPixel(null);
   }, [cogUrl]);
 
+  // Prefetch neighbour-year COGs into the browser HTTP cache so animation
+  // and year-scrubbing advance instantly once the current frame loads.
+  // Depends on backend sending `Cache-Control: immutable` — without that,
+  // the fetch would still fire over the network on each frame.
+  useEffect(() => {
+    if (!currentFile || availableYears.length < 2) return;
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    const idx = availableYears.indexOf(currentFile.year);
+    const neighbours = [
+      availableYears[(idx + 1) % availableYears.length],
+      availableYears[(idx - 1 + availableYears.length) % availableYears.length],
+    ];
+    const controller = new AbortController();
+    neighbours.forEach((yr) => {
+      const file = filesForCategory.find((f) => f.year === yr);
+      if (!file || file.id === currentFile.id) return;
+      fetch(`${apiBase}/files/${file.id}/cog`, {
+        signal: controller.signal,
+        cache: 'force-cache',
+      }).catch(() => {});
+    });
+    return () => controller.abort();
+  }, [currentFile, availableYears, filesForCategory]);
+
   const handleDownloadTiff = () => {
     if (!currentFile) return;
     window.location.href = filesApi.getDownloadUrl(currentFile.id, 'tiff');
