@@ -53,6 +53,7 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pickedPixel, setPickedPixel] = useState<PickedPixel | null>(null);
   const [showDistricts, setShowDistricts] = useState(true);
+  const [preloadProgress, setPreloadProgress] = useState<{ done: number; total: number } | null>(null);
 
   // Initial load
   useEffect(() => {
@@ -157,6 +158,38 @@ export default function MapPage() {
     }, 1200);
     return () => clearTimeout(t);
   }, [playing, availableYears, cogLoading, selectedYear]);
+
+  // Preload all year COGs into browser cache before starting animation.
+  // With backend Cache-Control: immutable, subsequent parse/render hits
+  // the disk cache instead of the network.
+  const handleToggleAnimation = async () => {
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
+    if (preloadProgress) return; // already preloading
+    if (filesForCategory.length < 2) return;
+
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    setPreloadProgress({ done: 0, total: filesForCategory.length });
+    try {
+      let done = 0;
+      await Promise.all(
+        filesForCategory.map((f) =>
+          fetch(`${apiBase}/files/${f.id}/cog`, { cache: 'force-cache' })
+            .then((r) => r.blob())
+            .catch(() => {})
+            .finally(() => {
+              done += 1;
+              setPreloadProgress({ done, total: filesForCategory.length });
+            }),
+        ),
+      );
+      setPlaying(true);
+    } finally {
+      setPreloadProgress(null);
+    }
+  };
 
   const cogUrl = currentFile
     ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/files/${currentFile.id}/cog`
@@ -417,11 +450,24 @@ export default function MapPage() {
                   </div>
                   {availableYears.length > 1 && (
                     <button
-                      onClick={() => setPlaying((p) => !p)}
-                      className="mt-3 w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg py-1.5 text-sm"
+                      onClick={handleToggleAnimation}
+                      disabled={!!preloadProgress}
+                      className="mt-3 w-full flex items-center justify-center gap-2 bg-primary-50 text-primary-700 hover:bg-primary-100 rounded-lg py-1.5 text-sm disabled:opacity-70 disabled:cursor-wait"
                     >
-                      {playing ? <Pause size={14} /> : <Play size={14} />}
-                      {playing ? 'To\'xtatish' : 'Animatsiya'}
+                      {preloadProgress ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
+                          Yillar yuklanmoqda {preloadProgress.done}/{preloadProgress.total}
+                        </>
+                      ) : playing ? (
+                        <>
+                          <Pause size={14} /> To'xtatish
+                        </>
+                      ) : (
+                        <>
+                          <Play size={14} /> Animatsiya
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
