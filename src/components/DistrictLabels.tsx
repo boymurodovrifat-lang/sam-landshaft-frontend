@@ -5,20 +5,17 @@ import L from 'leaflet';
 // Samarqand viloyati tuman markazlari
 const DISTRICTS: { name: string; lat: number; lng: number; isCity?: boolean }[] = [
   { name: 'Samarqand', lat: 39.6542, lng: 66.9597, isCity: true },
-  { name: 'Kattaqo\'rg\'on', lat: 39.8968, lng: 66.2595, isCity: true },
-  { name: 'Ishtixon', lat: 39.9656, lng: 66.4827 },
-  { name: 'Qo\'shrabot', lat: 39.959, lng: 65.401 },
-  { name: 'Loyish', lat: 39.798, lng: 66.697 },
-  { name: 'Juma', lat: 40.005, lng: 67.072 },
-  { name: 'Ziyovuddin', lat: 39.888, lng: 66.265 },
-  { name: 'Oqtosh', lat: 39.553, lng: 66.578 },
-  { name: 'Payariq', lat: 39.676, lng: 66.754 },
-  { name: 'Payshanba', lat: 39.700, lng: 67.080 },
-  { name: 'Jomboy', lat: 39.712, lng: 67.427 },
-  { name: 'Bulungur', lat: 39.776, lng: 67.279 },
-  { name: 'Gulobod', lat: 39.783, lng: 67.567 },
-  { name: 'Urgut', lat: 39.396, lng: 67.252 },
-  { name: 'Nurobod', lat: 39.463, lng: 67.175 },
+  { name: 'Qo\'shrabot', lat: 40.1500, lng: 66.6100 },
+  { name: 'Payariq', lat: 39.9400, lng: 66.7700 },
+  { name: 'Ishtixon', lat: 39.9660, lng: 66.4830 },
+  { name: 'Oqtosh', lat: 39.8500, lng: 66.4000 },
+  { name: 'Ziyovuddin', lat: 39.8880, lng: 66.2650 },
+  { name: 'Loyish', lat: 39.8200, lng: 66.7000 },
+  { name: 'Bulungur', lat: 39.7700, lng: 67.2700 },
+  { name: 'Jomboy', lat: 39.7200, lng: 67.1100 },
+  { name: 'Juma', lat: 39.6100, lng: 66.8500 },
+  { name: 'Nurobod', lat: 39.5500, lng: 66.9000 },
+  { name: 'Urgut', lat: 39.4060, lng: 67.2440 },
 ];
 
 interface Props {
