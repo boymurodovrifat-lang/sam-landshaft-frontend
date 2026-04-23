@@ -173,15 +173,42 @@ export default function MapPage() {
   };
 
   const handleDownloadJpg = async () => {
-    // Simple: ekranni screenshot qilib olish
     const mapEl = document.querySelector('.leaflet-container') as HTMLElement | null;
     if (!mapEl) return;
-    const { default: html2canvas } = await import('html2canvas');
-    const canvas = await html2canvas(mapEl, { useCORS: true, allowTaint: true });
-    const link = document.createElement('a');
-    link.download = `${currentCategory?.slug || 'map'}_${selectedYear}.jpg`;
-    link.href = canvas.toDataURL('image/jpeg', 0.92);
-    link.click();
+
+    // html2canvas doesn't respect Leaflet pane's overflow:hidden clipping —
+    // off-viewport SVG markers leak into the screenshot at wrong positions.
+    // Hide controls (zoom buttons render broken) and the off-screen overlay
+    // pane contents, then capture clipped to the container's rect.
+    const controls = mapEl.querySelector('.leaflet-control-container') as HTMLElement | null;
+    const prevControlsDisplay = controls?.style.display ?? '';
+    if (controls) controls.style.display = 'none';
+
+    const rect = mapEl.getBoundingClientRect();
+
+    try {
+      const { default: html2canvas } = await import('html2canvas');
+      const canvas = await html2canvas(mapEl, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        width: rect.width,
+        height: rect.height,
+        windowWidth: rect.width,
+        windowHeight: rect.height,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
+        ignoreElements: (el) => el.classList?.contains('leaflet-control-container'),
+      });
+      const link = document.createElement('a');
+      link.download = `${currentCategory?.slug || 'map'}_${selectedYear}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.92);
+      link.click();
+    } finally {
+      if (controls) controls.style.display = prevControlsDisplay;
+    }
   };
 
   const handleExportVideo = async () => {
