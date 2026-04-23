@@ -17,6 +17,30 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon.svg" />
 
+    <style>
+      @keyframes sam-ping {
+        75%, 100% { transform: scale(2); opacity: 0; }
+      }
+      .sam-boot {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        height: 100vh; gap: 16px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+      .sam-boot-pin { position: relative; width: 64px; height: 64px; }
+      .sam-boot-pin span {
+        position: absolute; inset: 0; border-radius: 9999px;
+        background: rgba(37, 99, 235, 0.3);
+        animation: sam-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+      }
+      .sam-boot-pin span:nth-child(2) {
+        inset: 12px; background: rgba(37, 99, 235, 0.5);
+        animation-delay: 0.35s;
+      }
+      .sam-boot-pin svg {
+        position: absolute; inset: 0; margin: auto;
+      }
+      .sam-boot-text { font-size: 14px; color: #6b7280; }
+    </style>
     <noscript>
       <style>
         #root { display: none; }
@@ -30,8 +54,16 @@
   </head>
   <body>
     <div id="root">
-      <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#64748b">
-        Yuklanmoqda...
+      <div class="sam-boot">
+        <div class="sam-boot-pin">
+          <span></span>
+          <span></span>
+          <svg width="28" height="36" viewBox="0 0 24 34" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0 C5.4 0 0 5.4 0 12 C0 21 12 34 12 34 C12 34 24 21 24 12 C24 5.4 18.6 0 12 0 Z" fill="#2563eb" stroke="#fff" stroke-width="2"/>
+            <circle cx="12" cy="12" r="4" fill="#fff"/>
+          </svg>
+        </div>
+        <div class="sam-boot-text">Yuklanmoqda...</div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
