@@ -16,3 +16,32 @@ html, body, #root {
   width: 100%;
   background: #1a202c;
 }
+
+/* District / city labels */
+.district-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  font-size: 11px;
+  font-weight: 500;
+  color: #1e3a8a;
+  white-space: nowrap;
+  text-shadow:
+    -1px -1px 0 #fff,
+     1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+     1px  1px 0 #fff,
+     0    0   3px #fff;
+  pointer-events: none;
+}
+
+.district-label::before {
+  display: none !important;
+}
+
+.district-label--city {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e3a8a;
+}

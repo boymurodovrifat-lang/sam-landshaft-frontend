@@ -8,6 +8,7 @@ import CogLayer from '../components/CogLayer';
 import Legend from '../components/Legend';
 import PixelValuePopup, { type PickedPixel } from '../components/PixelValuePopup';
 import PixelInfoCard from '../components/PixelInfoCard';
+import DistrictLabels from '../components/DistrictLabels';
 import { recordAnimation, downloadBlob } from '../lib/videoRecorder';
 
 // Samarqand viloyati markazi
@@ -51,6 +52,7 @@ export default function MapPage() {
   const [cogError, setCogError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pickedPixel, setPickedPixel] = useState<PickedPixel | null>(null);
+  const [showDistricts, setShowDistricts] = useState(true);
 
   // Initial load
   useEffect(() => {
@@ -432,6 +434,25 @@ export default function MapPage() {
                 </div>
               )}
 
+              {/* District labels toggle */}
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-gray-500 uppercase">
+                  Tuman markazlari
+                </label>
+                <button
+                  onClick={() => setShowDistricts((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    showDistricts ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                      showDistricts ? 'translate-x-4' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
               {/* Legend */}
               {currentFile && currentCategory && (
                 <div>
@@ -460,6 +481,7 @@ export default function MapPage() {
               url={BASEMAPS[basemap].url}
               attribution={BASEMAPS[basemap].attribution}
             />
+            <DistrictLabels visible={showDistricts} />
             {cogUrl && currentCategory && (
               <>
                 <CogLayer
