@@ -299,7 +299,8 @@ export default function MapPage() {
       downloadBlob(blob, `${currentCategory.slug}_animation.${ext}`);
     } catch (err) {
       console.error('Video eksportida xatolik:', err);
-      alert('Video yaratishda xatolik yuz berdi.');
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`Video yaratishda xatolik yuz berdi.\n\n${msg}`);
     } finally {
       setRecording(false);
       setRecordProgress(null);
@@ -575,6 +576,7 @@ export default function MapPage() {
               key={basemap}
               url={BASEMAPS[basemap].url}
               attribution={BASEMAPS[basemap].attribution}
+              crossOrigin="anonymous"
             />
             <DistrictLabels visible={showDistricts} />
             {animationMode && currentCategory && filesForCategory.length > 0 && (

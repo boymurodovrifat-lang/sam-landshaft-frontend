@@ -48,10 +48,13 @@ async function captureFrame(
 ) {
   const html2canvasMod = await import('html2canvas');
   const html2canvas = html2canvasMod.default;
+  // allowTaint: false — we need an untainted canvas so captureStream works.
+  // Tiles must be served with CORS (TileLayer uses crossOrigin="anonymous").
   const snap = await html2canvas(mapEl, {
     useCORS: true,
-    allowTaint: true,
+    allowTaint: false,
     backgroundColor: null,
+    logging: false,
   });
   if (canvas.width !== snap.width || canvas.height !== snap.height) {
     canvas.width = snap.width;
@@ -91,7 +94,18 @@ export async function recordAnimation({
   await captureFrame(mapEl, canvas, ctx);
 
   const { mimeType, ext } = pickMimeType();
-  const stream = canvas.captureStream(fps);
+  let stream: MediaStream;
+  try {
+    stream = canvas.captureStream(fps);
+  } catch (e) {
+    const err = e as Error;
+    if (err?.name === 'SecurityError') {
+      throw new Error(
+        'Xarita plitkalari CORS bilan yuklanmagan. Sahifani yangilab, qaytadan urinib ko\'ring.',
+      );
+    }
+    throw err;
+  }
   const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_500_000 });
 
   const chunks: BlobPart[] = [];
