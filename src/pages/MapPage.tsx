@@ -5,6 +5,7 @@ import { categoriesApi } from '../api/categories';
 import { filesApi } from '../api/files';
 import type { Category, GeotiffFile } from '../types';
 import CogLayer from '../components/CogLayer';
+import AnimatedCogLayer from '../components/AnimatedCogLayer';
 import Legend from '../components/Legend';
 import PixelValuePopup, { type PickedPixel } from '../components/PixelValuePopup';
 import PixelInfoCard from '../components/PixelInfoCard';
@@ -54,6 +55,8 @@ export default function MapPage() {
   const [pickedPixel, setPickedPixel] = useState<PickedPixel | null>(null);
   const [showDistricts, setShowDistricts] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState<{ done: number; total: number } | null>(null);
+  const [animationMode, setAnimationMode] = useState(false);
+  const [animationReady, setAnimationReady] = useState(false);
 
   // Initial load
   useEffect(() => {
@@ -143,12 +146,12 @@ export default function MapPage() {
   const currentCategory = categories.find((c) => c.id === selectedCategoryId) || null;
   const currentFile = filesForCategory.find((f) => f.year === selectedYear) || null;
 
-  // Animation — advance only when the current frame has actually loaded.
-  // Previously a naïve setInterval raced through years while tiles were
-  // still fetching, so some frames were never shown.
+  // Animation — in animationMode all layers are pre-parsed and attached,
+  // so year advance is instant. Outside animationMode (static CogLayer
+  // path) we still gate on cogLoading so tiles finish before next frame.
   useEffect(() => {
     if (!playing || availableYears.length < 2) return;
-    if (cogLoading) return; // wait for current frame's tiles
+    if (!animationMode && cogLoading) return;
     const t = setTimeout(() => {
       setSelectedYear((y) => {
         if (y == null) return availableYears[0];
@@ -157,39 +160,34 @@ export default function MapPage() {
       });
     }, 1200);
     return () => clearTimeout(t);
-  }, [playing, availableYears, cogLoading, selectedYear]);
+  }, [playing, availableYears, cogLoading, selectedYear, animationMode]);
 
-  // Preload all year COGs into browser cache before starting animation.
-  // With backend Cache-Control: immutable, subsequent parse/render hits
-  // the disk cache instead of the network.
-  const handleToggleAnimation = async () => {
+  // Enter animation mode — AnimatedCogLayer parses + attaches all COGs,
+  // waits until every tile has rendered, then onReady fires playing=true.
+  const handleToggleAnimation = () => {
     if (playing) {
       setPlaying(false);
       return;
     }
     if (preloadProgress) return; // already preloading
-    if (filesForCategory.length < 2) return;
-
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-    setPreloadProgress({ done: 0, total: filesForCategory.length });
-    try {
-      let done = 0;
-      await Promise.all(
-        filesForCategory.map((f) =>
-          fetch(`${apiBase}/files/${f.id}/cog`, { cache: 'force-cache' })
-            .then((r) => r.blob())
-            .catch(() => {})
-            .finally(() => {
-              done += 1;
-              setPreloadProgress({ done, total: filesForCategory.length });
-            }),
-        ),
-      );
+    if (animationMode && animationReady) {
+      // Resume from pause — layers still mounted
       setPlaying(true);
-    } finally {
-      setPreloadProgress(null);
+      return;
     }
+    if (filesForCategory.length < 2) return;
+    setPreloadProgress({ done: 0, total: filesForCategory.length });
+    setAnimationReady(false);
+    setAnimationMode(true);
   };
+
+  // Exit animation mode when category/subcategory changes
+  useEffect(() => {
+    setAnimationMode(false);
+    setAnimationReady(false);
+    setPlaying(false);
+    setPreloadProgress(null);
+  }, [selectedCategoryId]);
 
   const cogUrl = currentFile
     ? `${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/files/${currentFile.id}/cog`
@@ -579,31 +577,50 @@ export default function MapPage() {
               attribution={BASEMAPS[basemap].attribution}
             />
             <DistrictLabels visible={showDistricts} />
+            {animationMode && currentCategory && filesForCategory.length > 0 && (
+              <AnimatedCogLayer
+                key={`anim-${selectedCategoryId}`}
+                files={filesForCategory}
+                currentFileId={currentFile?.id ?? null}
+                apiBase={import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}
+                colorSchemeJson={currentCategory.colorScheme}
+                opacity={opacity}
+                minValue={currentCategory.minValue ?? null}
+                maxValue={currentCategory.maxValue ?? null}
+                onProgress={(done, total) => setPreloadProgress({ done, total })}
+                onReady={() => {
+                  setPreloadProgress(null);
+                  setAnimationReady(true);
+                  setPlaying(true);
+                }}
+                onError={(msg) => setCogError(msg || null)}
+              />
+            )}
+            {!animationMode && cogUrl && currentCategory && (
+              <CogLayer
+                key={cogUrl}
+                url={cogUrl}
+                colorSchemeJson={currentCategory.colorScheme}
+                opacity={opacity}
+                minValue={currentCategory.minValue ?? null}
+                maxValue={currentCategory.maxValue ?? null}
+                onLoading={(v) => {
+                  cogLoadingRef.current = v;
+                  setCogLoading(v);
+                }}
+                onError={(msg) => setCogError(msg || null)}
+              />
+            )}
             {cogUrl && currentCategory && (
-              <>
-                <CogLayer
-                  key={cogUrl}
-                  url={cogUrl}
-                  colorSchemeJson={currentCategory.colorScheme}
-                  opacity={opacity}
-                  minValue={currentCategory.minValue ?? null}
-                  maxValue={currentCategory.maxValue ?? null}
-                  onLoading={(v) => {
-                    cogLoadingRef.current = v;
-                    setCogLoading(v);
-                  }}
-                  onError={(msg) => setCogError(msg || null)}
-                />
-                <PixelValuePopup
-                  cogUrl={cogUrl}
-                  pickedLatLng={
-                    pickedPixel
-                      ? { lat: pickedPixel.lat, lng: pickedPixel.lng }
-                      : null
-                  }
-                  onPick={setPickedPixel}
-                />
-              </>
+              <PixelValuePopup
+                cogUrl={cogUrl}
+                pickedLatLng={
+                  pickedPixel
+                    ? { lat: pickedPixel.lat, lng: pickedPixel.lng }
+                    : null
+                }
+                onPick={setPickedPixel}
+              />
             )}
           </MapContainer>
 
