@@ -18,6 +18,7 @@ const DISTRICTS: { name: string; lat: number; lng: number; isCity?: boolean }[] 
   { name: 'Toyloq', lat: 39.599094, lng: 67.092022 },
   { name: 'Gulobod', lat: 39.583125, lng: 66.957176 },
   { name: 'Urgut', lat: 39.409358, lng: 67.242004 },
+  { name: 'Ziyovuddin', lat: 40.116667, lng: 65.516667 },
 ];
 
 interface Props {

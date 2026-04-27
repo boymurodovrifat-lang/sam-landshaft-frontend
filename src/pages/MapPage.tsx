@@ -10,6 +10,7 @@ import Legend from '../components/Legend';
 import PixelValuePopup, { type PickedPixel } from '../components/PixelValuePopup';
 import PixelInfoCard from '../components/PixelInfoCard';
 import DistrictLabels from '../components/DistrictLabels';
+import SamarkandMask from '../components/SamarkandMask';
 import { recordAnimation, downloadBlob } from '../lib/videoRecorder';
 
 // Samarqand viloyati markazi
@@ -54,6 +55,7 @@ export default function MapPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pickedPixel, setPickedPixel] = useState<PickedPixel | null>(null);
   const [showDistricts, setShowDistricts] = useState(true);
+  const [showRegionMask, setShowRegionMask] = useState(true);
   const [preloadProgress, setPreloadProgress] = useState<{ done: number; total: number } | null>(null);
   const [animationMode, setAnimationMode] = useState(false);
   const [animationReady, setAnimationReady] = useState(false);
@@ -549,6 +551,25 @@ export default function MapPage() {
                 </button>
               </div>
 
+              {/* Region mask toggle */}
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-gray-500 uppercase">
+                  Viloyatdan tashqarini xira qilish
+                </label>
+                <button
+                  onClick={() => setShowRegionMask((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    showRegionMask ? 'bg-primary-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                      showRegionMask ? 'translate-x-4' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
               {/* Legend */}
               {currentFile && currentCategory && (
                 <div>
@@ -578,6 +599,7 @@ export default function MapPage() {
               attribution={BASEMAPS[basemap].attribution}
               crossOrigin="anonymous"
             />
+            <SamarkandMask visible={showRegionMask} />
             <DistrictLabels visible={showDistricts} />
             {animationMode && currentCategory && filesForCategory.length > 0 && (
               <AnimatedCogLayer
