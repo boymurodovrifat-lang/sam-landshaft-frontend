@@ -5,6 +5,7 @@ import L from 'leaflet';
 // Samarqand viloyati tuman markazlari
 const DISTRICTS: { name: string; lat: number; lng: number; isCity?: boolean }[] = [
   { name: 'Samarqand', lat: 39.6542, lng: 66.9597, isCity: true },
+  { name: 'Kattaqo\'rg\'on', lat: 39.901812, lng: 66.268494, isCity: true },
   { name: 'Qo\'shrabot', lat: 40.246400, lng: 66.648957 },
   { name: 'Payshanba', lat: 40.010864, lng: 66.229284 },
   { name: 'Oqtosh', lat: 39.921635, lng: 65.925364 },
