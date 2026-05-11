@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
-import { Download, FileImage, Film, Play, Pause, Menu, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { Download, FileImage, Film, Play, Pause, Menu, X, Square } from 'lucide-react';
 import { categoriesApi } from '../api/categories';
 import { filesApi } from '../api/files';
 import type { Category, GeotiffFile } from '../types';
@@ -11,6 +12,10 @@ import PixelValuePopup, { type PickedPixel } from '../components/PixelValuePopup
 import PixelInfoCard from '../components/PixelInfoCard';
 import DistrictLabels from '../components/DistrictLabels';
 import SamarkandMask from '../components/SamarkandMask';
+import BboxDrawTool from '../components/BboxDrawTool';
+import DetailDrawer from '../components/DetailDrawer';
+import { useBboxStore } from '../store/bboxStore';
+import { decodeBbox, encodeBbox } from '../lib/bbox';
 import { recordAnimation, downloadBlob } from '../lib/videoRecorder';
 
 // Samarqand viloyati markazi
@@ -59,6 +64,30 @@ export default function MapPage() {
   const [preloadProgress, setPreloadProgress] = useState<{ done: number; total: number } | null>(null);
   const [animationMode, setAnimationMode] = useState(false);
   const [animationReady, setAnimationReady] = useState(false);
+  const [georaster, setGeoraster] = useState<any | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const storedBbox = useBboxStore((s) => s.bbox);
+  const setStoredBbox = useBboxStore((s) => s.setBbox);
+  const startDrawing = useBboxStore((s) => s.startDrawing);
+
+  // Hydrate bbox from URL on first mount.
+  useEffect(() => {
+    const fromUrl = decodeBbox(searchParams.get('bbox'));
+    if (fromUrl) setStoredBbox(fromUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sync bbox -> URL whenever it changes.
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (storedBbox) {
+      next.set('bbox', encodeBbox(storedBbox));
+    } else {
+      next.delete('bbox');
+    }
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storedBbox]);
 
   // Initial load
   useEffect(() => {
@@ -529,6 +558,12 @@ export default function MapPage() {
                         : 'Animatsiya videosi'}
                     </button>
                   )}
+                  <button
+                    onClick={() => startDrawing()}
+                    className="w-full flex items-center justify-center gap-2 bg-white border hover:bg-gray-50 text-gray-700 rounded-lg py-1.5 text-sm"
+                  >
+                    <Square size={14} /> Hudud tanlash (to'rtburchak)
+                  </button>
                 </div>
               )}
 
@@ -633,8 +668,10 @@ export default function MapPage() {
                   setCogLoading(v);
                 }}
                 onError={(msg) => setCogError(msg || null)}
+                onGeorasterReady={setGeoraster}
               />
             )}
+            <BboxDrawTool />
             {cogUrl && currentCategory && (
               <PixelValuePopup
                 cogUrl={cogUrl}
@@ -673,6 +710,17 @@ export default function MapPage() {
               {cogError}
             </div>
           )}
+
+          {/* Bbox detail drawer — renders only when a bbox is committed */}
+          <DetailDrawer
+            georaster={georaster}
+            categoryId={selectedCategoryId}
+            categoryName={currentCategory?.name}
+            colorSchemeJson={currentCategory?.colorScheme}
+            unit={currentCategory?.unit}
+            currentFileId={currentFile?.id ?? null}
+            hasMultiYear={availableYears.length >= 2}
+          />
         </div>
       </div>
     </div>
