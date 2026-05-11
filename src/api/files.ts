@@ -1,5 +1,22 @@
 import { apiClient } from './client';
 import type { GeotiffFile } from '../types';
+import { encodeBbox, type Bbox } from '../lib/bbox';
+
+export interface YearStatPoint {
+  year: number;
+  fileId: number;
+  min: number | null;
+  max: number | null;
+  mean: number | null;
+  stdDev: number | null;
+  validPixels: number;
+}
+
+export interface YearStatsResponse {
+  categoryId: number;
+  bbox: Bbox;
+  years: YearStatPoint[];
+}
 
 export const filesApi = {
   getAll: async (params?: { categoryId?: number; year?: number }): Promise<GeotiffFile[]> => {
@@ -49,5 +66,28 @@ export const filesApi = {
   getDownloadUrl: (id: number, format: 'tiff' | 'jpg' = 'tiff'): string => {
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
     return `${API_URL}/files/${id}/download?format=${format}`;
+  },
+
+  /**
+   * URL for the server-side cropped GeoTIFF download.
+   * Server streams `image/tiff` with Content-Disposition: attachment.
+   */
+  getCropUrl: (id: number, bbox: Bbox): string => {
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    return `${API_URL}/files/${id}/crop?bbox=${encodeURIComponent(encodeBbox(bbox))}`;
+  },
+
+  /**
+   * Per-year statistics for a bbox in the given category.
+   * Used by DetailYearTrend.
+   */
+  getYearStats: async (
+    categoryId: number,
+    bbox: Bbox,
+  ): Promise<YearStatsResponse> => {
+    const { data } = await apiClient.get<YearStatsResponse>('/files/stats', {
+      params: { categoryId, bbox: encodeBbox(bbox) },
+    });
+    return data;
   },
 };
