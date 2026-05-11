@@ -25,7 +25,6 @@ export default function DetailStatsCard({ stats, unit }: Props) {
     ['Minimum', fmt(stats.min, unit)],
     ['Maksimum', fmt(stats.max, unit)],
     ["Standart og'ish", fmt(stats.stdDev, unit)],
-    ['Piksellar', stats.validPixels.toLocaleString()],
   ];
   return (
     <dl className="grid grid-cols-2 gap-y-1.5 gap-x-3 text-sm">

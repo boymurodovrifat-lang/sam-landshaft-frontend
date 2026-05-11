@@ -128,29 +128,37 @@ export function computeStats(
   }
 
   // Class breakdown using colorScheme stops as half-open intervals.
+  // Drop zero-width stops (duplicate values in the scheme) so the chart
+  // doesn't render confusing 'X – X' bars.
   let classBreakdown: ClassEntry[] | undefined;
   if (colorScheme && colorScheme.length >= 2) {
-    const sortedStops = [...colorScheme].sort((a, b) => a.value - b.value);
-    classBreakdown = [];
-    for (let i = 0; i < sortedStops.length - 1; i++) {
-      const a = sortedStops[i];
-      const b = sortedStops[i + 1];
-      let count = 0;
-      for (const v of collected) {
-        if (v >= a.value && v < b.value) count++;
-      }
-      // Last interval is inclusive on the right so the top value isn't lost.
-      if (i === sortedStops.length - 2) {
+    const sortedStops = [...colorScheme]
+      .sort((a, b) => a.value - b.value)
+      .filter(
+        (s, i, arr) => i === 0 || s.value > arr[i - 1].value,
+      );
+    if (sortedStops.length >= 2) {
+      classBreakdown = [];
+      for (let i = 0; i < sortedStops.length - 1; i++) {
+        const a = sortedStops[i];
+        const b = sortedStops[i + 1];
+        let count = 0;
         for (const v of collected) {
-          if (v === b.value) count++;
+          if (v >= a.value && v < b.value) count++;
         }
+        // Last interval is inclusive on the right so the top value isn't lost.
+        if (i === sortedStops.length - 2) {
+          for (const v of collected) {
+            if (v === b.value) count++;
+          }
+        }
+        classBreakdown.push({
+          label: `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
+          color: a.color,
+          count,
+          pct: (count / n) * 100,
+        });
       }
-      classBreakdown.push({
-        label: `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
-        color: a.color,
-        count,
-        pct: (count / n) * 100,
-      });
     }
   }
 
@@ -271,26 +279,30 @@ export async function computeStatsAsync(
 
   let classBreakdown: ClassEntry[] | undefined;
   if (colorScheme && colorScheme.length >= 2) {
-    const sortedStops = [...colorScheme].sort((a, b) => a.value - b.value);
-    classBreakdown = [];
-    for (let i = 0; i < sortedStops.length - 1; i++) {
-      const a = sortedStops[i];
-      const b = sortedStops[i + 1];
-      let count = 0;
-      for (const v of collected) {
-        if (v >= a.value && v < b.value) count++;
-      }
-      if (i === sortedStops.length - 2) {
+    const sortedStops = [...colorScheme]
+      .sort((a, b) => a.value - b.value)
+      .filter((s, i, arr) => i === 0 || s.value > arr[i - 1].value);
+    if (sortedStops.length >= 2) {
+      classBreakdown = [];
+      for (let i = 0; i < sortedStops.length - 1; i++) {
+        const a = sortedStops[i];
+        const b = sortedStops[i + 1];
+        let count = 0;
         for (const v of collected) {
-          if (v === b.value) count++;
+          if (v >= a.value && v < b.value) count++;
         }
+        if (i === sortedStops.length - 2) {
+          for (const v of collected) {
+            if (v === b.value) count++;
+          }
+        }
+        classBreakdown.push({
+          label: `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
+          color: a.color,
+          count,
+          pct: (count / n) * 100,
+        });
       }
-      classBreakdown.push({
-        label: `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
-        color: a.color,
-        count,
-        pct: (count / n) * 100,
-      });
     }
   }
 
