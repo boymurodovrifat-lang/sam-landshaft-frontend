@@ -3,6 +3,8 @@
 export interface ColorStop {
   value: number;
   color: string; // #rrggbb
+  /** Optional human-readable label for discrete/categorical schemes (e.g. LULC). */
+  label?: string;
 }
 
 export type ColorScheme = ColorStop[];

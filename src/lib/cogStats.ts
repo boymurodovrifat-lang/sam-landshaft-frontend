@@ -6,6 +6,7 @@ import type { Bbox } from './bbox';
 export interface ColorStop {
   value: number;
   color: string;
+  label?: string;
 }
 
 export interface HistogramBin {
@@ -153,7 +154,7 @@ export function computeStats(
           }
         }
         classBreakdown.push({
-          label: `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
+          label: a.label ?? `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
           color: a.color,
           count,
           pct: (count / n) * 100,
@@ -297,7 +298,7 @@ export async function computeStatsAsync(
           }
         }
         classBreakdown.push({
-          label: `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
+          label: a.label ?? `${a.value.toFixed(2)} – ${b.value.toFixed(2)}`,
           color: a.color,
           count,
           pct: (count / n) * 100,

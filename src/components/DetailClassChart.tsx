@@ -27,12 +27,25 @@ export default function DetailClassChart({ stats }: Props) {
     Percent: Number(c.pct.toFixed(2)),
     color: c.color,
   }));
+  // Rotate x-axis labels and reserve room when labels look like text
+  // (discrete categories — LULC class names won't fit horizontally).
+  const hasTextLabels = data.some((d) => /[A-Za-z]/.test(d.range));
   return (
-    <div className="h-56">
+    <div className="h-64">
       <ResponsiveContainer>
-        <BarChart data={data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+        <BarChart
+          data={data}
+          margin={{ top: 8, right: 8, bottom: hasTextLabels ? 60 : 8, left: 0 }}
+        >
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="range" tick={{ fontSize: 10 }} />
+          <XAxis
+            dataKey="range"
+            tick={{ fontSize: 10 }}
+            interval={0}
+            angle={hasTextLabels ? -35 : 0}
+            textAnchor={hasTextLabels ? 'end' : 'middle'}
+            height={hasTextLabels ? 80 : 30}
+          />
           <YAxis unit="%" tick={{ fontSize: 11 }} />
           <Tooltip formatter={(v) => `${v}%`} />
           <Bar dataKey="Percent">
