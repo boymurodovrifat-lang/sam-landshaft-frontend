@@ -23,12 +23,10 @@ interface Props {
   hasMultiYear: boolean;
 }
 
-type Tab = 'stats' | 'hist' | 'class' | 'trend';
-
 /**
- * Right-side (desktop) / bottom-sheet (mobile) panel that renders the
- * stats + chart tabs for the active bbox. Mounts only when a bbox is
- * committed in the store.
+ * Right-side (desktop) / bottom-sheet (mobile) panel that renders all
+ * stats + charts in a single vertical scroll. No tabs — sections show
+ * only when their data is available.
  */
 export default function DetailDrawer({
   georaster,
@@ -42,7 +40,6 @@ export default function DetailDrawer({
   const bbox = useBboxStore((s) => s.bbox);
   const setBbox = useBboxStore((s) => s.setBbox);
   const startDrawing = useBboxStore((s) => s.startDrawing);
-  const [tab, setTab] = useState<Tab>('stats');
 
   const scheme = useMemo<ColorStop[] | undefined>(
     () => parseColorScheme(colorSchemeJson) ?? undefined,
@@ -83,13 +80,6 @@ export default function DetailDrawer({
     window.location.href = filesApi.getCropUrl(currentFileId, bbox);
   };
 
-  const tabs: { key: Tab; label: string; show: boolean }[] = [
-    { key: 'stats', label: 'Statistika', show: true },
-    { key: 'hist', label: 'Histogramma', show: true },
-    { key: 'class', label: 'Sinf %', show: !!scheme },
-    { key: 'trend', label: 'Yillar trendi', show: hasMultiYear },
-  ];
-
   return (
     <aside
       className="
@@ -127,41 +117,37 @@ export default function DetailDrawer({
         </div>
       </header>
 
-      <nav className="flex border-b text-xs overflow-x-auto">
-        {tabs
-          .filter((t) => t.show)
-          .map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-3 py-2 whitespace-nowrap border-b-2 ${
-                tab === t.key
-                  ? 'border-primary-600 text-primary-700 font-semibold'
-                  : 'border-transparent text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-      </nav>
-
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {(statsLoading || !stats) && (
           <div className="text-sm text-gray-500">Hisoblanmoqda...</div>
         )}
-        {stats && tab === 'stats' && (
-          <DetailStatsCard stats={stats} unit={unit} />
+
+        {stats && (
+          <>
+            <Section title="Statistika">
+              <DetailStatsCard stats={stats} unit={unit} />
+            </Section>
+
+            <Section title="Histogramma">
+              <DetailHistogram stats={stats} unit={unit} />
+            </Section>
+
+            {scheme && (
+              <Section title="Sinf %">
+                <DetailClassChart stats={stats} />
+              </Section>
+            )}
+          </>
         )}
-        {stats && tab === 'hist' && (
-          <DetailHistogram stats={stats} unit={unit} />
-        )}
-        {stats && tab === 'class' && <DetailClassChart stats={stats} />}
-        {tab === 'trend' && categoryId != null && (
-          <DetailYearTrend
-            categoryId={categoryId}
-            bbox={bbox}
-            unit={unit}
-          />
+
+        {hasMultiYear && categoryId != null && (
+          <Section title="Yillar trendi">
+            <DetailYearTrend
+              categoryId={categoryId}
+              bbox={bbox}
+              unit={unit}
+            />
+          </Section>
         )}
       </div>
 
@@ -175,5 +161,22 @@ export default function DetailDrawer({
         </button>
       </footer>
     </aside>
+  );
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <h3 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+        {title}
+      </h3>
+      {children}
+    </section>
   );
 }
