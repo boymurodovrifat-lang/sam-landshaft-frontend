@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -17,8 +18,16 @@ export default defineConfig({
             id.includes('geotiff')
           ) return 'georaster';
           if (id.includes('react-leaflet') || id.includes('/leaflet/')) return 'leaflet';
+          if (id.includes('recharts') || id.includes('victory-vendor') || id.includes('d3-')) return 'recharts';
         },
       },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'e2e', 'dist'],
   },
 })
