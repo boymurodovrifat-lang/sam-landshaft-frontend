@@ -1,7 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X, Download, Pencil } from 'lucide-react';
 import { useBboxStore } from '../store/bboxStore';
-import { computeStats, type ColorStop } from '../lib/cogStats';
+import {
+  computeStatsAsync,
+  type CogStats,
+  type ColorStop,
+} from '../lib/cogStats';
 import { parseColorScheme } from '../lib/colorScheme';
 import { filesApi } from '../api/files';
 import DetailStatsCard from './DetailStatsCard';
@@ -45,9 +49,29 @@ export default function DetailDrawer({
     [colorSchemeJson],
   );
 
-  const stats = useMemo(() => {
-    if (!georaster || !bbox) return null;
-    return computeStats(georaster, bbox, scheme);
+  const [stats, setStats] = useState<CogStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!georaster || !bbox) {
+      setStats(null);
+      return;
+    }
+    let cancelled = false;
+    setStatsLoading(true);
+    computeStatsAsync(georaster, bbox, scheme)
+      .then((s) => {
+        if (!cancelled) setStats(s);
+      })
+      .catch(() => {
+        if (!cancelled) setStats(null);
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [georaster, bbox, scheme]);
 
   if (!bbox) return null;
@@ -122,7 +146,7 @@ export default function DetailDrawer({
       </nav>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {!stats && (
+        {(statsLoading || !stats) && (
           <div className="text-sm text-gray-500">Hisoblanmoqda...</div>
         )}
         {stats && tab === 'stats' && (
