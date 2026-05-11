@@ -20,6 +20,12 @@ interface CogLayerProps {
   onLoad?: (bounds: L.LatLngBounds) => void;
   onLoading?: (loading: boolean) => void;
   onError?: (message: string) => void;
+  /**
+   * Fires with the parsed georaster instance once loading completes, and
+   * with `null` when the layer is torn down. Used by DetailDrawer to run
+   * client-side stats without reparsing the COG.
+   */
+  onGeorasterReady?: (georaster: any | null) => void;
 }
 
 /**
@@ -48,6 +54,7 @@ export default function CogLayer({
   onLoad,
   onLoading,
   onError,
+  onGeorasterReady,
 }: CogLayerProps) {
   const map = useMap();
   const layerRef = useRef<L.Layer | null>(null);
@@ -63,6 +70,7 @@ export default function CogLayer({
       try {
         const georaster = await parseGeoraster(url);
         if (cancelled) return;
+        onGeorasterReady?.(georaster);
 
         const rawScheme: ColorScheme = parseColorScheme(colorSchemeJson) ?? DEFAULT_SCHEME;
         const normScheme = normalizeScheme(rawScheme);
@@ -139,6 +147,7 @@ export default function CogLayer({
       else if (layerRef.current) map.removeLayer(layerRef.current);
       layerRef.current = null;
       setReady(false);
+      onGeorasterReady?.(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
