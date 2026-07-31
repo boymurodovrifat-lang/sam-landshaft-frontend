@@ -540,6 +540,12 @@ export default function MapPage() {
                   >
                     <Download size={14} /> GeoTIFF yuklab olish
                   </button>
+                  <p className="text-[11px] text-gray-500 leading-snug">
+                    Fayl COG (Cloud Optimized GeoTIFF) formatida yuklanadi — bu
+                    oddiy GeoTIFF bilan bir xil (piksel qiymatlari aynan bir xil,
+                    lossless). QGIS, ArcGIS va boshqa GIS dasturlarida oddiy
+                    GeoTIFF kabi ochiladi.
+                  </p>
                   <button
                     onClick={handleDownloadJpg}
                     className="w-full flex items-center justify-center gap-2 bg-white border hover:bg-gray-50 text-gray-700 rounded-lg py-1.5 text-sm"
