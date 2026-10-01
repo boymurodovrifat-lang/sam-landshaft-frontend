@@ -13,7 +13,8 @@ dist-ssr
 *.local
 
 .env
-.env.local
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -27,3 +28,8 @@ dist-ssr
 *.sw?
 
 .vite
+
+# Test artifacts
+playwright-report/
+test-results/
+coverage/

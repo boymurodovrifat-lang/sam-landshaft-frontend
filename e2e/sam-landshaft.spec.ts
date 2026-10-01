@@ -1,9 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-const BASE = 'https://sam-landshaft.uz';
-const API = 'https://api.sam-landshaft.uz/api';
-const ADMIN_EMAIL = 'admin@sam-landshaft.uz';
-const ADMIN_PASSWORD = 'ChangeMe123!';
+const BASE = process.env.E2E_BASE_URL || 'http://localhost:5173';
+const API = process.env.E2E_API_URL || 'http://localhost:3000/api';
+const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || '';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || '';
+const hasAdminCredentials = Boolean(ADMIN_EMAIL && ADMIN_PASSWORD);
 
 // ═══════════════════════════════════
 // PUBLIC MAP
@@ -45,13 +46,14 @@ test.describe('Admin login', () => {
 
   test('Noto\'g\'ri parol xatolik beradi', async ({ page }) => {
     await page.goto(`${BASE}/admin/login`);
-    await page.fill('input[type="email"]', ADMIN_EMAIL);
+    await page.fill('input[type="email"]', 'invalid-admin@example.com');
     await page.fill('input[type="password"]', 'wrongpassword');
     await page.click('button[type="submit"]');
     await expect(page.getByText(/noto.*g.*ri|xato/i)).toBeVisible({ timeout: 10000 });
   });
 
   test('To\'g\'ri login dashboard\'ga o\'tadi', async ({ page }) => {
+    test.skip(!hasAdminCredentials, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD for a test account.');
     await page.goto(`${BASE}/admin/login`);
     await page.fill('input[type="email"]', ADMIN_EMAIL);
     await page.fill('input[type="password"]', ADMIN_PASSWORD);
@@ -65,8 +67,9 @@ test.describe('Admin login', () => {
 // ═══════════════════════════════════
 
 test.describe('Admin panel', () => {
+  test.skip(!hasAdminCredentials, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD for a test account.');
   // Sidebar locator — barcha nav linklar shu yerda
-  const sidebar = (page: any) => page.locator('aside');
+  const sidebar = (page: Page) => page.locator('aside');
 
   test.beforeEach(async ({ page }) => {
     await page.goto(`${BASE}/admin/login`);
@@ -142,6 +145,7 @@ test.describe('API', () => {
   });
 
   test('Login', async ({ request }) => {
+    test.skip(!hasAdminCredentials, 'Set E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD for a test account.');
     const res = await request.post(`${API}/auth/login`, {
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
