@@ -1,7 +1,7 @@
 {
   "name": "sam-landshaft-frontend",
   "private": true,
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -53,5 +53,6 @@
     "typescript-eslint": "^8.58.0",
     "vite": "^8.0.4",
     "vitest": "^4.1.5"
-  }
+  },
+  "license": "MIT"
 }
