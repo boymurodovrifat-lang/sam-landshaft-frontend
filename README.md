@@ -60,7 +60,7 @@ To add a dataset, an administrator creates or selects a category, configures its
 
 ## About the data
 
-Sam-Landshaft displays prepared geospatial datasets. The original satellite processing and calculation of environmental indices take place outside this frontend repository. Study rasters are supplied separately through the [companion backend](https://github.com/diyorbek0309/sam-landshaft-backend).
+Sam-Landshaft displays prepared geospatial datasets. The original satellite processing and calculation of environmental indices take place outside this frontend repository. Study rasters are supplied separately through the [companion backend](https://github.com/boymurodovrifat-lang/sam-landshaft-backend).
 
 Statistics for large selections may use sampled raster values and should be treated as approximate summaries. Comparisons across years require consistent input data, measurement units, and classification thresholds.
 
@@ -71,14 +71,14 @@ Map images and videos are useful for presenting results. GeoTIFF downloads retai
 Requirements: Node.js 22.13 or a compatible newer version, npm, and a configured Sam-Landshaft backend with map data.
 
 ```bash
-git clone https://github.com/diyorbek0309/sam-landshaft-frontend.git
+git clone https://github.com/boymurodovrifat-lang/sam-landshaft-frontend.git
 cd sam-landshaft-frontend
 npm ci
 cp .env.example .env
 npm run dev
 ```
 
-Set the backend address in `.env` using `VITE_API_URL`. Open [http://localhost:5173](http://localhost:5173) for the public portal or `/admin/login` for the administration interface. Repository access is needed while the source repositories are private.
+Set the backend address in `.env` using `VITE_API_URL`. Open [http://localhost:5173](http://localhost:5173) for the public portal or `/admin/login` for the administration interface. This frontend repository is publicly accessible. Access to the companion backend and its datasets must be arranged separately if they are not publicly available.
 
 To build the frontend, run `npm run build`. Deployment instructions are in [`DEPLOY.md`](DEPLOY.md).
 
@@ -86,10 +86,20 @@ The frontend is built with React, TypeScript, Vite, Tailwind CSS, and Leaflet.
 
 ## Research and reproducibility
 
+This repository makes the frontend source code available. On its own, it does not provide everything needed to reproduce the complete deployed architecture or the experiments reported in a paper. Reproducing those results also requires the matching backend, input rasters, preprocessing and evaluation scripts, and experiment settings.
+
+For an exact source snapshot, record the full Git commit SHA with `git rev-parse HEAD` and check out that commit before running `npm ci`. A paper should identify the frontend and backend versions separately. Unit tests (`npm test`) check frontend functions; they do not reproduce the paper's experiments.
+
 For a paper or review submission, provide a versioned release of the source code together with the matching datasets and their descriptions. Record the observation periods, preprocessing methods, units, classification thresholds, and software versions used. If a dataset cannot be shared publicly, explain how reviewers can obtain access.
 
 A release can be archived with Zenodo to obtain a DOI for the exact version. See [GitHub's guidance on referencing and citing content](https://docs.github.com/en/repositories/archiving-a-github-repository/referencing-and-citing-content).
 
 ## License and attribution
 
-This repository currently has no `LICENSE` file. Source-code and dataset reuse terms should be specified when distributing the project. The source and reuse terms of the supplied region boundary should also be documented. Basemap attribution must be preserved.
+Original implementation: Diyorbek Olimov (`diyorbek0309`). The source baseline is [sam-landshaft-frontend](https://github.com/diyorbek0309/sam-landshaft-frontend), commit `aafb4ce2cb50c7a3091c6e019614105f24f9e2b3`. Repository hosting and paper authorship are distinct from software authorship.
+
+An open-source license has not yet been adopted by the rights holders. Public access to the source does not itself grant reuse rights. Dataset and third-party asset terms remain separate; preserve basemap attribution. No proposed MIT license is applied by this publication.
+
+## Paper release candidate
+
+The matched candidate version is `v1.0.0-rc.1`. Citation metadata is in [`CITATION.cff`](CITATION.cff). Evaluation scripts, source/input records and manuscript alignment notes are supplied in the companion backend's `reproducibility/` directory. No GitHub release or DOI has been created by this preparation.
