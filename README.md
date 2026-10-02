@@ -102,4 +102,4 @@ An open-source license has not yet been adopted by the rights holders. Public ac
 
 ## Paper release candidate
 
-The matched candidate version is `v1.0.0-rc.1`. Citation metadata is in [`CITATION.cff`](CITATION.cff). Evaluation scripts, source/input records and manuscript alignment notes are supplied in the companion backend's `reproducibility/` directory. No GitHub release or DOI has been created by this preparation.
+The matched candidate version is `v1.0.0-rc.1`. Citation metadata is in [`CITATION.cff`](CITATION.cff). Evaluation scripts, source/input records and manuscript alignment notes are supplied in the companion backend's `reproducibility/` directory. The matched source snapshots and evaluation package are archived in Zenodo: [DOI 10.5281/zenodo.23101499](https://doi.org/10.5281/zenodo.23101499). The public GitHub review release is `v1.0.0-rc.1`. The archive retains the source licensing status pending rights-holder agreement.
