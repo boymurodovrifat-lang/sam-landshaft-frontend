@@ -23,9 +23,7 @@ export interface GeotiffFile {
   category?: Category;
   year: number;
   filename: string;
-  cogPath: string;        // Path on server
   cogUrl: string;         // Public URL
-  originalPath: string;   // Original GeoTIFF for download
   downloadUrl: string;
   fileSize: number;
   bounds?: [number, number, number, number]; // [minX, minY, maxX, maxY]
